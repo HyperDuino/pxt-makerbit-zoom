@@ -1,4 +1,4 @@
-# MakerBit LCD1602
+# MakerBit Zoom
 
 [![Build Status](https://travis-ci.org/1010Technologies/pxt-makerbit-zoom.svg?branch=master)](https://travis-ci.org/1010Technologies/pxt-makerbit-zoom)
 
