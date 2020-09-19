@@ -5,13 +5,13 @@
     "license": "MIT",
     "dependencies": {
         "core": "*",
-        "serial-read": "github:philipphenkel/pxt-serial-read#v0.1.0"
+        "serial-read": "github:philipphenkel/pxt-serial-read#v0.1.0",
+        "is-simulator": "github:philipphenkel/pxt-is-simulator#v0.0.2"
     },
     "files": [
         "namespace.ts",
         "README.md",
-        "zoom.ts",
-        "sim/zoom.ts"
+        "zoom.ts"
     ],
     "testFiles": [
         "test.ts"

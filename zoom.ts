@@ -69,24 +69,24 @@ namespace makerbit {
     name: string,
     handler: (value: string) => void
   ) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     espState.subscriptions.push(new Subscription(name, handler));
   }
 
   export function onReceivedString(handler: (receivedString: string) => void) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     espState.subscriptions.push(new Subscription("str", handler));
   }
 
   export function onReceivedNumber(handler: (receivedNumber: number) => void) {
-    autoConnectToESP();
-    espState.subscriptions.push(new Subscription("num", handler));
-  }
-
-  function autoConnectToESP() {
-    if (!espState) {
-      makerbit.connectESP(SerialPin.P0, SerialPin.P1);
+    if (!autoConnectToESP()) {
+      return;
     }
+    espState.subscriptions.push(new Subscription("num", handler));
   }
 
   /**
@@ -96,7 +96,9 @@ namespace makerbit {
   //% ssid.defl=your_ssid
   //% pw.defl=your_pw
   export function setWifi(ssid: string, pw: string) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     serial.writeString('wifi "');
     serial.writeString(ssid);
     serial.writeString('" "');
@@ -111,6 +113,10 @@ namespace makerbit {
   //% tx.defl=SerialPin.P0
   //% rx.defl=SerialPin.P1
   export function connectESP(tx: SerialPin, rx: SerialPin) {
+    if (control.isSimulator()) {
+      return;
+    }
+
     serial.setWriteLinePadding(0);
     serial.setRxBufferSize(32);
     serial.redirect(tx, rx, BaudRate.BaudRate9600);
@@ -130,18 +136,31 @@ namespace makerbit {
     serial.writeString("----- -----\n");
   }
 
+  function autoConnectToESP(): boolean {
+    if (!espState) {
+      makerbit.connectESP(SerialPin.P0, SerialPin.P1);
+    }
+    return !!espState;
+  }
+
   export function sendNumber(value: number) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     send("num", "" + value);
   }
 
   export function sendString(value: string) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     send("str", value);
   }
 
   export function send(name: string, value: string) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     serial.writeString("pub ");
     serial.writeString(normalize(name));
     serial.writeString(' "');
@@ -151,13 +170,17 @@ namespace makerbit {
   }
 
   export function setGroup(id: number) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     espState.groupId = id;
     updateMqttRoot();
   }
 
   export function setMeetingId(id: string) {
-    autoConnectToESP();
+    if (!autoConnectToESP()) {
+      return;
+    }
     espState.meetingId = normalize(id);
     updateMqttRoot();
   }
