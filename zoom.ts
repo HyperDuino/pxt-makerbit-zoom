@@ -65,9 +65,17 @@ namespace makerbit {
     }
   }
 
+  /**
+   * Registers code to run when the radio receives a name value pair.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_on_receive_name_value"
+  //% block="on radio received %name"
+  //% draggableParameters=reporter
+  //% weight=20
   export function onReceivedNameValue(
     name: string,
-    handler: (value: string) => void
+    handler: (value: number) => void
   ) {
     if (!autoConnectToESP()) {
       return;
@@ -75,6 +83,14 @@ namespace makerbit {
     espState.subscriptions.push(new Subscription(name, handler));
   }
 
+  /**
+   * Registers code to run when the micro:bit receives a string.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_on_receive_string"
+  //% block="on radio received"
+  //% draggableParameters=reporter
+  //% weight=40
   export function onReceivedString(handler: (receivedString: string) => void) {
     if (!autoConnectToESP()) {
       return;
@@ -82,6 +98,14 @@ namespace makerbit {
     espState.subscriptions.push(new Subscription("str", handler));
   }
 
+  /**
+   * Registers code to run when the micro:bit receives a number.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_on_receive_number"
+  //% block="on radio received"
+  //% draggableParameters=reporter
+  //% weight=30
   export function onReceivedNumber(handler: (receivedNumber: number) => void) {
     if (!autoConnectToESP()) {
       return;
@@ -90,36 +114,44 @@ namespace makerbit {
   }
 
   /**
-   * Configure WiFi
+   * Configures the WiFi connection.
+   * @param ssid network name
+   * @param password password
    */
-  //% block="Initialize ESP8266|Wifi SSID = %ssid|Wifi PW = %pw"
-  //% ssid.defl=your_ssid
-  //% pw.defl=your_pw
-  export function setWifi(ssid: string, pw: string) {
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_set_wifi"
+  //% block="zoom set WiFi network %ssid | password %password"
+  //% weight=90
+  export function setWifi(ssid: string, password: string) {
     if (!autoConnectToESP()) {
       return;
     }
     serial.writeString('wifi "');
     serial.writeString(ssid);
     serial.writeString('" "');
-    serial.writeString(pw);
+    serial.writeString(password);
     serial.writeString('"\n');
   }
 
   /**
-   * Initialize ESP8266 module
+   * Connects to the ESP8266 device.
+   * @param espTx ESP8266 device transmitter pin (TX)
+   * @param espRx ESP8266 device receiver pin (RX)
    */
-  //% block="Initialize ESP8266|RX (Tx of micro:bit) %tx|TX (Rx of micro:bit) %rx"
-  //% tx.defl=SerialPin.P0
-  //% rx.defl=SerialPin.P1
-  export function connectESP(tx: SerialPin, rx: SerialPin) {
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_connect_esp"
+  //% block="zoom connect ESP8266 with ESP TX attached to %espTx | and ESP RX to %espRx"
+  //% espTx.defl=SerialPin.P0
+  //% espRx.defl=SerialPin.P1
+  //% weight=80
+  export function connectESP(espTx: SerialPin, espRx: SerialPin) {
     if (control.isSimulator()) {
       return;
     }
 
     serial.setWriteLinePadding(0);
     serial.setRxBufferSize(32);
-    serial.redirect(tx, rx, BaudRate.BaudRate9600);
+    serial.redirect(espTx, espRx, BaudRate.BaudRate9600);
 
     if (!espState) {
       espState = {
@@ -143,32 +175,72 @@ namespace makerbit {
     return !!espState;
   }
 
+  function publish(name: string, value: string) {
+    serial.writeString("pub ");
+    serial.writeString(normalize(name));
+    serial.writeString(' "');
+    serial.writeString("" + value);
+    serial.writeString('"');
+    serial.writeString("\n");
+  }
+
+  /**
+   * Broadcasts a number to other micro:bits connected via the internet.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_send_number"
+  //% block="zoom send number %value"
+  //% weight=70
   export function sendNumber(value: number) {
     if (!autoConnectToESP()) {
       return;
     }
-    send("num", "" + value);
+    publish("num", "" + value);
   }
 
+  /**
+   * Broadcasts a string to other micro:bits connected via the internet.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_send_string"
+  //% block="zoom send string %value"
+  //% value.shadowOptions.toString=true
+  //% weight=60
   export function sendString(value: string) {
     if (!autoConnectToESP()) {
       return;
     }
-    send("str", value);
+    publish("str", value);
   }
 
-  export function send(name: string, value: string) {
+  /**
+   * Broadcasts a name / value pair to any connected micro:bit in the group.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_send_value"
+  //% block="zoom send|value %name|= %value"
+  //% weight=50
+  export function sendValue(name: string, value: number) {
     if (!autoConnectToESP()) {
       return;
     }
     serial.writeString("pub ");
     serial.writeString(normalize(name));
     serial.writeString(' "');
-    serial.writeString(value);
+    serial.writeString("" + value);
     serial.writeString('"');
     serial.writeString("\n");
   }
 
+  /**
+   * Sets the group id for internet communications. A micro:bit can only listen to one one group in a meeting at any time.
+   * @param id the group id between ``0`` and ``255``
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_set_group"
+  //% blockId=radio_set_group block="zoom set group %id"
+  //% id.defl=0 id.min=0 id.max=255
+  //% weight=75
   export function setGroup(id: number) {
     if (!autoConnectToESP()) {
       return;
@@ -177,7 +249,16 @@ namespace makerbit {
     updateMqttRoot();
   }
 
-  export function setMeetingId(id: string) {
+  /**
+   * Sets the meeting id for internet communications. A micro:bit can only listen to one group in a meeting at any time.
+   * @param id the meeting id
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_set_meeting"
+  //% blockId=radio_set_group block="zoom set meeting %id"
+  //% id.defl=123-456-7890
+  //% weight=79
+  export function setMeeting(id: string) {
     if (!autoConnectToESP()) {
       return;
     }
