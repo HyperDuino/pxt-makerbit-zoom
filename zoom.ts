@@ -66,11 +66,11 @@ namespace makerbit {
   }
 
   /**
-   * Registers code to run when the radio receives a name value pair.
+   * Registers code to run when the micro:bit receives a name value pair.
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_on_receive_name_value"
-  //% block="on radio received %name"
+  //% block="on zoom received %name"
   //% draggableParameters=reporter
   //% weight=20
   export function onReceivedNameValue(
@@ -88,7 +88,7 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_on_receive_string"
-  //% block="on radio received"
+  //% block="on zoom received"
   //% draggableParameters=reporter
   //% weight=40
   export function onReceivedString(handler: (receivedString: string) => void) {
@@ -103,7 +103,7 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_on_receive_number"
-  //% block="on radio received"
+  //% block="on zoom received"
   //% draggableParameters=reporter
   //% weight=30
   export function onReceivedNumber(handler: (receivedNumber: number) => void) {
@@ -121,7 +121,7 @@ namespace makerbit {
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_set_wifi"
   //% block="zoom set WiFi network %ssid | password %password"
-  //% weight=90
+  //% weight=80
   export function setWifi(ssid: string, password: string) {
     if (!autoConnectToESP()) {
       return;
@@ -140,10 +140,10 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_connect_esp"
-  //% block="zoom connect ESP8266 with ESP TX attached to %espTx | and ESP RX to %espRx"
+  //% block="zoom connect with ESP TX attached to %espTx | and ESP RX to %espRx"
   //% espTx.defl=SerialPin.P0
   //% espRx.defl=SerialPin.P1
-  //% weight=80
+  //% weight=90
   export function connectESP(espTx: SerialPin, espRx: SerialPin) {
     if (control.isSimulator()) {
       return;
@@ -156,7 +156,7 @@ namespace makerbit {
     if (!espState) {
       espState = {
         subscriptions: [],
-        meetingId: "makerbit",
+        meetingId: "" + randint(1111111111, 9999999999),
         groupId: 1,
       };
 
@@ -219,6 +219,7 @@ namespace makerbit {
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_send_value"
   //% block="zoom send|value %name|= %value"
+  //% name.defl=name
   //% weight=50
   export function sendValue(name: string, value: number) {
     if (!autoConnectToESP()) {
@@ -238,8 +239,8 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_set_group"
-  //% blockId=radio_set_group block="zoom set group %id"
-  //% id.defl=0 id.min=0 id.max=255
+  //% block="zoom set group %id"
+  //% id.defl=1 id.min=0 id.max=255
   //% weight=75
   export function setGroup(id: number) {
     if (!autoConnectToESP()) {
@@ -255,7 +256,7 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_set_meeting"
-  //% blockId=radio_set_group block="zoom set meeting %id"
+  //% block="zoom set meeting %id"
   //% id.defl=123-456-7890
   //% weight=79
   export function setMeeting(id: string) {
