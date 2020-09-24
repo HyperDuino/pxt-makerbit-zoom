@@ -120,7 +120,7 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_set_wifi"
-  //% block="zoom set WiFi network %ssid | password %password"
+  //% block="zoom set WiFi network %ssid | and password %password"
   //% weight=80
   export function setWifi(ssid: string, password: string) {
     if (!autoConnectToESP()) {
@@ -242,6 +242,7 @@ namespace makerbit {
   //% block="zoom set group %id"
   //% id.defl=1 id.min=0 id.max=255
   //% weight=75
+  //% blockHidden=1
   export function setGroup(id: number) {
     if (!autoConnectToESP()) {
       return;
@@ -259,11 +260,31 @@ namespace makerbit {
   //% block="zoom set meeting %id"
   //% id.defl=123-456-7890
   //% weight=79
+  //% blockHidden=1
   export function setMeeting(id: string) {
     if (!autoConnectToESP()) {
       return;
     }
     espState.meetingId = normalize(id);
+    updateMqttRoot();
+  }
+
+  /**
+   * Sets the meeting and room for internet communications. A micro:bit can only listen to room at any time.
+   * @param id the meeting id
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_set_meeting_room"
+  //% block="zoom set meeting %id and room %room"
+  //% meetingId.defl=123-456-7890
+  //% room.defl=1 room.min=0 room.max=255
+  //% weight=74
+  export function setMeetingRoom(meetingId: string, room: number) {
+    if (!autoConnectToESP()) {
+      return;
+    }
+    espState.groupId = room;
+    espState.meetingId = normalize(meetingId);
     updateMqttRoot();
   }
 
