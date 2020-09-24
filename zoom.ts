@@ -119,10 +119,10 @@ namespace makerbit {
    * @param password password
    */
   //% subcategory="Zoom"
-  //% blockId="makerbit_zoom_set_wifi"
-  //% block="zoom set WiFi network %ssid | and password %password"
+  //% blockId="makerbit_zoom_connect_wifi"
+  //% block="zoom connect to WiFi network %ssid | and password %password"
   //% weight=80
-  export function setWifi(ssid: string, password: string) {
+  export function connectWifi(ssid: string, password: string) {
     if (!autoConnectToESP()) {
       return;
     }
@@ -274,12 +274,12 @@ namespace makerbit {
    * @param id the meeting id
    */
   //% subcategory="Zoom"
-  //% blockId="makerbit_zoom_set_meeting_room"
-  //% block="zoom set meeting %id and room %room"
+  //% blockId="makerbit_zoom_connect_meeting_room"
+  //% block="zoom connect to meeting %id and room %room"
   //% meetingId.defl=123-456-7890
   //% room.defl=1 room.min=0 room.max=255
   //% weight=74
-  export function setMeetingRoom(meetingId: string, room: number) {
+  export function connectMeetingRoom(meetingId: string, room: number) {
     if (!autoConnectToESP()) {
       return;
     }
