@@ -140,18 +140,18 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_connect_esp"
-  //% block="zoom connect with ESP TX attached to %espTx | and ESP RX to %espRx"
-  //% espTx.defl=SerialPin.P0
-  //% espRx.defl=SerialPin.P1
+  //% block="zoom connect with ESP RX attached to %espRX | and ESP TX to %espTX"
+  //% espRX.defl=SerialPin.P0
+  //% espTX.defl=SerialPin.P1
   //% weight=90
-  export function connectESP(espTx: SerialPin, espRx: SerialPin) {
+  export function connectESP(espRX: SerialPin, espTX: SerialPin) {
     if (control.isSimulator()) {
       return;
     }
 
     serial.setWriteLinePadding(0);
     serial.setRxBufferSize(32);
-    serial.redirect(espTx, espRx, BaudRate.BaudRate9600);
+    serial.redirect(espRX, espTX, BaudRate.BaudRate9600);
 
     if (!espState) {
       espState = {
