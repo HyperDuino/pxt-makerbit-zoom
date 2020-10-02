@@ -7,9 +7,9 @@ namespace makerbit {
 
   let espState: EspState = undefined;
 
-  const SCREENSHOT_TOPIC = "_sc"
-  const STRING_TOPIC = "_st"
-  const NUMBER_TOPIC = "_nu"
+  const SCREENSHOT_TOPIC = "_sc";
+  const STRING_TOPIC = "_st";
+  const NUMBER_TOPIC = "_nu";
 
   function normalize(value: string) {
     return value.replaceAll(" ", "");
@@ -35,7 +35,7 @@ namespace makerbit {
       const sub = espState.subscriptions[i];
       if (sub.name == nameValue[0]) {
         if (sub.name == SCREENSHOT_TOPIC) {
-          sub.handler(decodeImage(nameValue[0]));
+          sub.handler(decodeImage(nameValue[1]));
         } else {
           sub.handler(nameValue[1]);
         }
@@ -132,7 +132,9 @@ namespace makerbit {
   //% block="on zoom received"
   //% draggableParameters=reporter
   //% weight=30
-  export function onReceivedScreenshot(handler: (receivedScreenshot: Image) => void) {
+  export function onReceivedScreenshot(
+    handler: (receivedScreenshot: Image) => void
+  ) {
     if (!autoConnectToESP()) {
       return;
     }
@@ -238,46 +240,6 @@ namespace makerbit {
     }
 
     publish(NUMBER_TOPIC, "" + Math.roundWithPrecision(value, 2));
-  }
-
-  function decodeImage (value: string): Image {
-    let bytes = base64decode(value)
-
-    let bits = 0
-    for (let i = 3; i >= 0; i--) {
-      bits = bits << 8;
-      bits = bits + bytes[i]
-    }
-
-    let img = images.createImage("");
-    for (let x = 4; x >= 0; x--) {
-        for (let y = 4; y >= 0; y--) {
-            img.setPixel(x, y, (bits & 0x01) == 1);
-            bits = bits >> 1
-        }
-    }
-    
-    return img;
-}
-
-function encodeImage(image: Image) : string{
-    let bits = 0;
-    for (let x = 0; x < 5; x++) {
-      for (let y = 0; y < 5; y++) {
-        bits = bits << 1;
-        if (image.pixel(x, y)) {
-          bits = bits + 1;
-        }
-      }
-    }
-
-    let bytes: number[] = [];
-    for (let index = 0; index < 4; index++) {
-      bytes.push(bits & 0xff);
-      bits = bits >> 8;
-    }
-
-    return base64encode(bytes);
   }
 
   /**
@@ -548,5 +510,45 @@ function encodeImage(image: Image) : string{
       out.push(((c3 & 0x03) << 6) | c4);
     }
     return out;
+  }
+
+  function encodeImage(image: Image): string {
+    let bits = 0;
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        bits = bits << 1;
+        if (image.pixel(x, y)) {
+          bits = bits + 1;
+        }
+      }
+    }
+
+    let bytes: number[] = [];
+    for (let index = 0; index < 4; index++) {
+      bytes.push(bits & 0xff);
+      bits = bits >> 8;
+    }
+
+    return base64encode(bytes);
+  }
+
+  function decodeImage(value: string): Image {
+    let bytes = base64decode(value);
+
+    let bits = 0;
+    for (let i = 3; i >= 0; i--) {
+      bits = bits << 8;
+      bits = bits + bytes[i];
+    }
+
+    let img = images.createImage("");
+    for (let x = 4; x >= 0; x--) {
+      for (let y = 4; y >= 0; y--) {
+        img.setPixel(x, y, (bits & 0x01) == 1);
+        bits = bits >> 1;
+      }
+    }
+
+    return img;
   }
 }
