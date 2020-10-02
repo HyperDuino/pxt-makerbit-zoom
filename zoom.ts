@@ -83,7 +83,6 @@ namespace makerbit {
   //% blockId="makerbit_zoom_on_receive_name_value"
   //% block="on zoom received %name"
   //% draggableParameters=reporter
-  //% handlerStatement=true
   //% weight=20
   export function onReceivedNameValue(
     name: string,
@@ -102,7 +101,6 @@ namespace makerbit {
   //% blockId="makerbit_zoom_on_receive_string"
   //% block="on zoom received"
   //% draggableParameters=reporter
-  //% handlerStatement=true
   //% weight=40
   export function onReceivedString(handler: (receivedString: string) => void) {
     if (!autoConnectToESP()) {
@@ -118,7 +116,6 @@ namespace makerbit {
   //% blockId="makerbit_zoom_on_receive_number"
   //% block="on zoom received"
   //% draggableParameters=reporter
-  //% handlerStatement=true
   //% weight=35
   export function onReceivedNumber(handler: (receivedNumber: number) => void) {
     if (!autoConnectToESP()) {
@@ -134,7 +131,6 @@ namespace makerbit {
   //% blockId="makerbit_zoom_on_receive_screenshot"
   //% block="on zoom received"
   //% draggableParameters=reporter
-  //% handlerStatement=true
   //% weight=30
   export function onReceivedScreenshot(handler: (receivedScreenshot: Image) => void) {
     if (!autoConnectToESP()) {
