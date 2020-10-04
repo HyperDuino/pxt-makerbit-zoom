@@ -128,7 +128,8 @@ namespace makerbit {
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_on_receive_number_in_channel"
-  //% block="on zoom received %receivedNumber | in %channel"
+  //% block="on zoom received in %channel"
+  //% channel.min=0 channel.max=255 channel.defl=1
   //% draggableParameters=reporter
   //% weight=20
   export function onReceivedNumberInChannel(
