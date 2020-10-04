@@ -77,24 +77,6 @@ namespace makerbit {
   }
 
   /**
-   * Registers code to run when the micro:bit receives a name value pair.
-   */
-  //% subcategory="Zoom"
-  //% blockId="makerbit_zoom_on_receive_name_value"
-  //% block="on zoom received %name"
-  //% draggableParameters=reporter
-  //% weight=20
-  export function onReceivedNameValue(
-    name: string,
-    handler: (value: number) => void
-  ) {
-    if (!autoConnectToESP()) {
-      return;
-    }
-    espState.subscriptions.push(new Subscription(name, handler));
-  }
-
-  /**
    * Registers code to run when the micro:bit receives a string.
    */
   //% subcategory="Zoom"
@@ -139,6 +121,24 @@ namespace makerbit {
       return;
     }
     espState.subscriptions.push(new Subscription(SCREENSHOT_TOPIC, handler));
+  }
+
+  /**
+   * Registers code to run when the micro:bit receives a number in a channel.
+   */
+  //% subcategory="Zoom"
+  //% blockId="makerbit_zoom_on_receive_number_in_channel"
+  //% block="on zoom received %receivedNumber | in %channel"
+  //% draggableParameters=reporter
+  //% weight=20
+  export function onReceivedNumberInChannel(
+    handler: (receivedNumber: number) => void,
+    channel: number
+  ) {
+    if (!autoConnectToESP()) {
+      return;
+    }
+    espState.subscriptions.push(new Subscription("" + Math.floor(channel), handler));
   }
 
   /**
@@ -213,7 +213,7 @@ namespace makerbit {
   }
 
   /**
-   * Broadcasts a string to other micro:bits connected via the internet.
+   * Broadcasts a string to other micro:bits that are connected to the meeting room.
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_send_string"
@@ -228,7 +228,7 @@ namespace makerbit {
   }
 
   /**
-   * Broadcasts a number to other micro:bits connected via the internet.
+   * Broadcasts a number to other micro:bits that are connected to the meeting room.
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_send_number"
@@ -243,7 +243,7 @@ namespace makerbit {
   }
 
   /**
-   * Broadcasts a screenshot to other micro:bits connected via the internet.
+   * Broadcasts a screenshot to other micro:bits that are connected to the meeting room.
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_send_screenshot"
@@ -258,28 +258,22 @@ namespace makerbit {
   }
 
   /**
-   * Broadcasts a name / value pair to any connected micro:bit in the group.
+   * Broadcasts a number via a channel to other micro:bits that are connected to the meeting room.
    */
   //% subcategory="Zoom"
-  //% blockId="makerbit_zoom_send_value"
-  //% block="zoom send|value %name|= %value"
-  //% name.defl=name
+  //% blockId="makerbit_zoom_send_number_to_channel"
+  //% block="zoom send|number %value| to channel %channel"
+  //% channel.min=0 channel.max=255 channel.defl=1
   //% weight=50
-  export function sendValue(name: string, value: number) {
+  export function sendNumberToChannel(value: number, channel: number) {
     if (!autoConnectToESP()) {
       return;
     }
-    serial.writeString("pub ");
-    serial.writeString(normalize(name));
-    serial.writeString(' "');
-    serial.writeString("" + value);
-    serial.writeString('"');
-    serial.writeString("\n");
+    publish("" + Math.floor(channel), "" + Math.roundWithPrecision(value, 2));
   }
 
   /**
-   * Sets the meeting and room for internet communications. A micro:bit can only listen to room at any time.
-   * @param id the meeting id
+   * Sets the meeting and room for internet communications. A micro:bit can be connected to one room at any time.
    */
   //% subcategory="Zoom"
   //% blockId="makerbit_zoom_connect_meeting_room"
