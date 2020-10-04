@@ -132,8 +132,8 @@ namespace makerbit {
   //% draggableParameters=reporter
   //% weight=20
   export function onReceivedNumberInChannel(
-    handler: (receivedNumber: number) => void,
-    channel: number
+    channel: number,
+    handler: (receivedNumber: number) => void
   ) {
     if (!autoConnectToESP()) {
       return;
