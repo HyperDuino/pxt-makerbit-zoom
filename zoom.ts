@@ -1,15 +1,16 @@
 const enum ZoomConnectionStatus {
-  //% block="ESP device"
+  //% block="None"
   NONE = 0,
   //% block="ESP device"
   ESP = 1,
   //% block="WiFi network"
   WIFI = 2,
-  //% block="internet"
+  //% block="Internet"
   INTERNET = 3,
-  //% block="meeting room"
+  //% block="Meeting room"
   MEETING = 4,
 }
+
 namespace makerbit {
   export namespace zoom {
     interface EspState {
@@ -166,7 +167,6 @@ namespace makerbit {
       );
     }
 
-
     /**
      * Registers code to run when the connection status changed.
      */
@@ -174,7 +174,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_on_connection_status"
     //% block="on zoom connection status"
     //% draggableParameters=reporter
-    //% weight=19
+    //% weight=9
     export function onConnectionStatus(handler: () => void) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription("$ESP/connection", handler));
@@ -187,13 +187,11 @@ namespace makerbit {
     //% blockId="makerbit_zoom_on_error"
     //% block="on zoom error"
     //% draggableParameters=reporter
-    //% weight=18
+    //% weight=8
     export function onError(handler: () => void) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription("$ESP/error", handler));
     }
-
-
 
     /**
      * Configures the WiFi connection.
@@ -272,13 +270,13 @@ namespace makerbit {
       );
     }
 
-     /**
+    /**
      * Returns the connection status.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_connection_status"
     //% block="zoom connection status"
-    //% weight=9
+    //% weight=19
     export function getConnectionStatus(): ZoomConnectionStatus {
       if (!espState) {
         return ZoomConnectionStatus.NONE;
@@ -286,13 +284,13 @@ namespace makerbit {
       return espState.connectionStatus;
     }
 
-     /**
-     * Returns the last error code and set it to 0.
+    /**
+     * Returns the last error code and sets it to 0.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_last_error"
     //% block="zoom last error"
-    //% weight=8
+    //% weight=18
     export function getLastError(): number {
       if (!espState) {
         return 0;
@@ -301,8 +299,6 @@ namespace makerbit {
       espState.lastError = 0;
       return result;
     }
-
-
 
     function autoConnectToESP(): void {
       if (!espState) {
@@ -388,12 +384,12 @@ namespace makerbit {
     }
 
     /**
-     * is connected
+     * Returns true if connected at the specified level or better.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_is_connected"
     //% block="zoom is connected to %state"
-    //% weight=30
+    //% weight=73
     export function isConnected(status: ZoomConnectionStatus): boolean {
       if (!espState) {
         return false;
