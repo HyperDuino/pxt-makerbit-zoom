@@ -161,7 +161,7 @@ namespace makerbit {
     }
 
     /**
-     * Do something when the ESP notified an error.
+     * Do something when the ESP notifies an error.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_on_error"
@@ -349,7 +349,7 @@ namespace makerbit {
     }
 
     /**
-     * Broadcasts a string to other micro:bits that are connected to the meeting room.
+     * Broadcasts a string to other micro:bits that are connected to the same meeting room.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_string"
@@ -362,7 +362,7 @@ namespace makerbit {
     }
 
     /**
-     * Broadcasts a number to other micro:bits that are connected to the meeting room.
+     * Broadcasts a number to other micro:bits that are connected to the same meeting room.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_number"
@@ -375,7 +375,7 @@ namespace makerbit {
     }
 
     /**
-     * Broadcasts a screenshot to other micro:bits that are connected to the meeting room.
+     * Broadcasts a screenshot to other micro:bits that are connected to the same meeting room.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_screenshot"
@@ -388,7 +388,7 @@ namespace makerbit {
     }
 
     /**
-     * Broadcasts a number via a channel to other micro:bits that are connected to the meeting room.
+     * Broadcasts a number via a channel to other micro:bits that are connected to the same meeting room.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_number_to_channel"
