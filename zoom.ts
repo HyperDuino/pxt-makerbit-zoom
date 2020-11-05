@@ -10,6 +10,7 @@ const enum ZoomConnectionStatus {
   //% block="meeting room"
   MEETING = 4,
 }
+
 namespace makerbit {
   export namespace zoom {
     interface EspState {
@@ -57,8 +58,6 @@ namespace makerbit {
           if (sub.name == SCREENSHOT_TOPIC) {
             sub.handler(decodeImage(nameValue[1]));
           } else {
-            //showStringOnLcd1602(nameValue[0], 1, 16);
-            //showStringOnLcd1602(nameValue[1], 17, 16);
             sub.handler(nameValue[1]);
           }
         }
@@ -93,9 +92,7 @@ namespace makerbit {
         handler: (value: string | number | Image) => void
       ) {
         this.name = normalize(name);
-        // serial.writeLine("sub " + this.name);
         this.handler = handler;
-        // showStringOnLcd1602("sub " + this.name, 17, 16);
       }
     }
 
@@ -106,7 +103,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_on_receive_string"
     //% block="on zoom received"
     //% draggableParameters=reporter
-    //% weight=40
+    //% weight=49
     export function onReceivedString(
       handler: (receivedString: string) => void
     ) {
@@ -115,13 +112,13 @@ namespace makerbit {
     }
 
     /**
-     * Registers code to run when the micro:bit receives a number.
+     * Do something when the micro:bit receives a number.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_on_receive_number"
     //% block="on zoom received"
     //% draggableParameters=reporter
-    //% weight=35
+    //% weight=50
     export function onReceivedNumber(
       handler: (receivedNumber: number) => void
     ) {
@@ -130,13 +127,13 @@ namespace makerbit {
     }
 
     /**
-     * Registers code to run when the micro:bit receives a screenshot.
+     * Do something when the micro:bit receives a screenshot.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_on_receive_screenshot"
     //% block="on zoom received"
     //% draggableParameters=reporter
-    //% weight=30
+    //% weight=48
     export function onReceivedScreenshot(
       handler: (receivedScreenshot: Image) => void
     ) {
@@ -145,14 +142,14 @@ namespace makerbit {
     }
 
     /**
-     * Registers code to run when the micro:bit receives a number in a channel.
+     * Do something when the micro:bit receives a number in a channel.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_on_receive_number_in_channel"
     //% block="on zoom received in channel %channel"
     //% channel.min=0 channel.max=255 channel.defl=1
     //% draggableParameters=reporter
-    //% weight=20
+    //% weight=47
     export function onReceivedNumberInChannel(
       channel: number,
       handler: (receivedNumber: number) => void
@@ -163,11 +160,25 @@ namespace makerbit {
       );
     }
 
+    /**
+     * Do something when the ESP notified an error.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_on_error"
+    //% block="on zoom error"
+    //% weight=29
     export function onError(handler: () => void) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription("$ESP/error", handler));
     }
 
+    /**
+     * Do something when the connection status changes.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_on_connection_status"
+    //% block="on zoom connection status"
+    //% weight=30
     export function onConnectionStatus(handler: () => void) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription("$ESP/connection", handler));
@@ -181,7 +192,7 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_connect_wifi"
     //% block="zoom connect to WiFi network %ssid | and password %password"
-    //% weight=80
+    //% weight=98
     export function connectWiFi(ssid: string, password: string) {
       autoConnectToESP();
 
@@ -202,7 +213,7 @@ namespace makerbit {
     //% block="zoom connect with ESP RX attached to %espRX | and ESP TX to %espTX"
     //% espRX.defl=SerialPin.P0
     //% espTX.defl=SerialPin.P1
-    //% weight=90
+    //% weight=99
     export function connectESP(espRX: SerialPin, espTX: SerialPin) {
       serial.setWriteLinePadding(0);
       serial.setRxBufferSize(32);
@@ -277,6 +288,13 @@ namespace makerbit {
       );
     }
 
+    /**
+     * Returns and resets the last error code.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_get_last_error"
+    //% block="zoom error"
+    //% weight=89
     export function getLastError() {
       if (!espState) {
         return 0;
@@ -286,6 +304,14 @@ namespace makerbit {
       return result;
     }
 
+    /**
+     * Returns the ESP device firmware version.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_get_device"
+    //% block="zoom device version"
+    //% weight=88
+    //% blockHidden=true
     export function getDevice() {
       if (!espState) {
         return "0.0.0";
@@ -293,6 +319,13 @@ namespace makerbit {
       return espState.device;
     }
 
+    /**
+     * Returns the connection status.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_get_connection_status"
+    //% block="zoom connection"
+    //% weight=90
     export function getConnectionStatus() {
       if (!espState) {
         return ZoomConnectionStatus.NONE;
@@ -322,7 +355,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_send_string"
     //% block="zoom send string %value"
     //% value.shadowOptions.toString=true
-    //% weight=70
+    //% weight=79
     export function sendString(value: string) {
       autoConnectToESP();
       publish(STRING_TOPIC, value);
@@ -334,7 +367,7 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_number"
     //% block="zoom send number %value"
-    //% weight=65
+    //% weight=80
     export function sendNumber(value: number) {
       autoConnectToESP();
 
@@ -347,7 +380,7 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_screenshot"
     //% block="zoom send screenshot"
-    //% weight=60
+    //% weight=78
     export function sendScreenshot() {
       autoConnectToESP();
 
@@ -361,7 +394,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_send_number_to_channel"
     //% block="zoom send|number %value| to channel %channel"
     //% channel.min=0 channel.max=255 channel.defl=1
-    //% weight=50
+    //% weight=80
     export function sendNumberToChannel(value: number, channel: number) {
       autoConnectToESP();
       publish("" + Math.floor(channel), "" + Math.roundWithPrecision(value, 2));
@@ -375,7 +408,7 @@ namespace makerbit {
     //% block="zoom connect to meeting %meeting and room %room"
     //% meetingId.defl=123-456-7890
     //% room.defl=1
-    //% weight=74
+    //% weight=97
     export function connectMeetingRoom(meeting: string, room: string) {
       autoConnectToESP();
       espState.room = room;
@@ -384,7 +417,8 @@ namespace makerbit {
     }
 
     /**
-     * is connected
+     * Returns true if the specified connection level is reached or exceeded.
+     * False otherwise.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_is_connected"
