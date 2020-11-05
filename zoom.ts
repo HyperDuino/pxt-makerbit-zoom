@@ -423,7 +423,7 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_is_connected"
     //% block="zoom is connected to %state"
-    //% weight=30
+    //% weight=91
     export function isConnected(status: ZoomConnectionStatus): boolean {
       if (!espState) {
         return false;

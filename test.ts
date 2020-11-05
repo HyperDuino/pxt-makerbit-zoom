@@ -2,6 +2,7 @@ makerbit.zoom.connectESP(SerialPin.P0,SerialPin.P1)
 makerbit.zoom.connectWiFi("network", "secret")
 makerbit.zoom.connectMeetingRoom("123-456-789-0", "1")
 
+const isConnected: boolean = makerbit.zoom.isConnected(ZoomConnectionStatus.MEETING)
 const status: number = makerbit.zoom.getConnectionStatus()
 const error: number = makerbit.zoom.getLastError()
 const device: string = makerbit.zoom.getDevice()
