@@ -22,14 +22,14 @@ namespace makerbit {
       device: string;
     }
 
+    const SCREENSHOT_TOPIC = "_sc";
+    const STRING_TOPIC = "_st";
+    const NUMBER_TOPIC = "_nu";
+
     let espState: EspState = undefined;
     let serialWriteString = (text: string) => {
       serial.writeString(text);
     };
-
-    const SCREENSHOT_TOPIC = "_sc";
-    const STRING_TOPIC = "_st";
-    const NUMBER_TOPIC = "_nu";
 
     function normalize(value: string) {
       return value.replaceAll(" ", "");
@@ -44,6 +44,21 @@ namespace makerbit {
       res.push(message.substr(0, splitIdx));
       res.push(message.substr(splitIdx + 1, message.length - splitIdx));
       return res;
+    }
+
+    function publish(name: string, value: string) {
+      serialWriteString("pub ");
+      serialWriteString(normalize(name));
+      serialWriteString(' "');
+      serialWriteString("" + value);
+      serialWriteString('"');
+      serialWriteString("\n");
+    }
+
+    function subscribe(topic: string) {
+      serialWriteString("sub ");
+      serialWriteString(topic);
+      serialWriteString('"\n');
     }
 
     function processSubscriptions(message: string) {
@@ -109,6 +124,7 @@ namespace makerbit {
     ) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(STRING_TOPIC, handler));
+      subscribe(STRING_TOPIC);
     }
 
     /**
@@ -124,6 +140,7 @@ namespace makerbit {
     ) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(NUMBER_TOPIC, handler));
+      subscribe(NUMBER_TOPIC);
     }
 
     /**
@@ -139,6 +156,7 @@ namespace makerbit {
     ) {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(SCREENSHOT_TOPIC, handler));
+      subscribe(SCREENSHOT_TOPIC);
     }
 
     /**
@@ -155,9 +173,11 @@ namespace makerbit {
       handler: (receivedNumber: number) => void
     ) {
       autoConnectToESP();
+      const topic = "" + Math.floor(channel);
       espState.subscriptions.push(
-        new Subscription("" + Math.floor(channel), handler)
+        new Subscription(topic, handler)
       );
+      subscribe(topic);
     }
 
     /**
@@ -224,7 +244,6 @@ namespace makerbit {
       }
 
       // establish clean connection
-      serialWriteString("----- -----\n");
       serialWriteString("----- -----\n");
 
       if (!espState) {
@@ -339,15 +358,6 @@ namespace makerbit {
       }
     }
 
-    function publish(name: string, value: string) {
-      serialWriteString("pub ");
-      serialWriteString(normalize(name));
-      serialWriteString(' "');
-      serialWriteString("" + value);
-      serialWriteString('"');
-      serialWriteString("\n");
-    }
-
     /**
      * Broadcasts a string to other micro:bits that are connected to the same meeting room.
      */
@@ -370,7 +380,6 @@ namespace makerbit {
     //% weight=80
     export function sendNumber(value: number) {
       autoConnectToESP();
-
       publish(NUMBER_TOPIC, "" + Math.roundWithPrecision(value, 2));
     }
 
@@ -383,7 +392,6 @@ namespace makerbit {
     //% weight=78
     export function sendScreenshot() {
       autoConnectToESP();
-
       publish(SCREENSHOT_TOPIC, "" + encodeImage(led.screenshot()));
     }
 
