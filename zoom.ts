@@ -174,9 +174,7 @@ namespace makerbit {
     ) {
       autoConnectToESP();
       const topic = "" + Math.floor(channel);
-      espState.subscriptions.push(
-        new Subscription(topic, handler)
-      );
+      espState.subscriptions.push(new Subscription(topic, handler));
       subscribe(topic);
     }
 
@@ -284,20 +282,14 @@ namespace makerbit {
 
         control.setInterval(
           () => {
-            if (control.isSimulator()) {
-              return;
-            }
             serialWriteString("device\n");
           },
           400,
           control.IntervalMode.Timeout
         );
-  
+
         control.setInterval(
           () => {
-            if (control.isSimulator()) {
-              return;
-            }
             serialWriteString("connection-status\n");
           },
           600,
