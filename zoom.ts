@@ -281,30 +281,31 @@ namespace makerbit {
         );
 
         control.inBackground(readSerialMessages);
-        basic.pause(500);
+
+        control.setInterval(
+          () => {
+            if (control.isSimulator()) {
+              return;
+            }
+            serialWriteString("device\n");
+          },
+          400,
+          control.IntervalMode.Timeout
+        );
+  
+        control.setInterval(
+          () => {
+            if (control.isSimulator()) {
+              return;
+            }
+            serialWriteString("connection-status\n");
+          },
+          600,
+          control.IntervalMode.Timeout
+        );
+
+        basic.pause(800);
       }
-
-      control.setInterval(
-        () => {
-          if (control.isSimulator()) {
-            return;
-          }
-          serialWriteString("device\n");
-        },
-        400,
-        control.IntervalMode.Timeout
-      );
-
-      control.setInterval(
-        () => {
-          if (control.isSimulator()) {
-            return;
-          }
-          serialWriteString("connection-status\n");
-        },
-        800,
-        control.IntervalMode.Timeout
-      );
     }
 
     /**
