@@ -61,13 +61,11 @@ namespace makerbit {
       serialWriteString('"\n');
     }
 
-    function processSubscriptions(message: string) {
-      if (!espState) return;
-
+    function processSubscriptions(state: EspState, message: string) {
       const nameValue = splitNameValue(message);
 
-      for (let i = 0; i < espState.subscriptions.length; ++i) {
-        const sub = espState.subscriptions[i];
+      for (let i = 0; i < state.subscriptions.length; ++i) {
+        const sub = state.subscriptions[i];
 
         if (nameValue[0].indexOf(sub.name) == 0) {
           if (sub.name == SCREENSHOT_TOPIC) {
@@ -79,7 +77,10 @@ namespace makerbit {
       }
     }
 
-    function readSerialMessages() {
+    function readSerialMessages(state: EspState) {
+      // discard read buffer
+      while (serial.read() != -1) {}
+
       let message: string = "";
 
       while (true) {
@@ -87,7 +88,7 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              processSubscriptions(message);
+              processSubscriptions(state, message);
               message = "";
             } else {
               message = message.concat(String.fromCharCode(r));
@@ -278,15 +279,15 @@ namespace makerbit {
           })
         );
 
-        control.inBackground(readSerialMessages);
-
-        basic.pause(200);
+        control.runInParallel(() => {
+          readSerialMessages(espState);
+        });
 
         control.setInterval(
           () => {
             serialWriteString("device\n");
           },
-          400,
+          500,
           control.IntervalMode.Timeout
         );
 
@@ -294,11 +295,9 @@ namespace makerbit {
           () => {
             serialWriteString("connection-status\n");
           },
-          600,
+          1000,
           control.IntervalMode.Timeout
         );
-
-        basic.pause(800);
       }
     }
 
