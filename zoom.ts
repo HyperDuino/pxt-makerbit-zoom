@@ -280,6 +280,8 @@ namespace makerbit {
 
         control.inBackground(readSerialMessages);
 
+        basic.pause(200);
+
         control.setInterval(
           () => {
             serialWriteString("device\n");
