@@ -308,7 +308,7 @@ namespace makerbit {
     }
 
     /**
-     * Returns and resets the last error code.
+     * Returns the last error code.
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_get_last_error"
@@ -318,9 +318,7 @@ namespace makerbit {
       if (!espState) {
         return 0;
       }
-      const result = espState.lastError;
-      espState.lastError = 0;
-      return result;
+      return espState.lastError;
     }
 
     /**
