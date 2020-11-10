@@ -20,6 +20,8 @@ namespace makerbit {
       room: string;
       connectionStatus: number;
       device: string;
+      espRX: SerialPin;
+      espTX: SerialPin;
     }
 
     const SCREENSHOT_TOPIC = "_sc";
@@ -78,9 +80,6 @@ namespace makerbit {
     }
 
     function readSerialMessages(state: EspState) {
-      // discard read buffer
-      while (serial.read() != -1) {}
-
       let message: string = "";
 
       while (true) {
@@ -234,16 +233,29 @@ namespace makerbit {
     //% espTX.defl=SerialPin.P1
     //% weight=99
     export function connectESP(espRX: SerialPin, espTX: SerialPin) {
-      serial.setWriteLinePadding(0);
-      serial.setRxBufferSize(32);
-      serial.redirect(espRX, espTX, BaudRate.BaudRate9600);
-
       if (control.isSimulator()) {
         serialWriteString = (text: string) => {};
       }
 
-      // establish clean connection
-      serialWriteString("----- -----\n");
+      if (!espState || espState.espRX != espRX || espState.espTX != espTX) {
+        serial.setRxBufferSize(32);
+        serial.redirect(espRX, espTX, BaudRate.BaudRate9600);
+
+        // establish clean connection 
+        while (serial.read() != -1) {}
+        serialWriteString("----- -----\n");
+
+        // request initial status on new serial connection
+        control.setInterval(
+          () => {
+            serialWriteString("device\n");
+            basic.pause(400);
+            serialWriteString("connection-status\n");
+          },
+          200,
+          control.IntervalMode.Timeout
+        );
+      }
 
       if (!espState) {
         espState = {
@@ -253,7 +265,13 @@ namespace makerbit {
           room: "1",
           connectionStatus: ZoomConnectionStatus.NONE,
           device: "0.0.0",
+          espRX: espRX,
+          espTX: espTX,
         };
+
+        control.runInParallel(() => {
+          readSerialMessages(espState);
+        });
 
         // keep last error
         espState.subscriptions.push(
@@ -277,26 +295,6 @@ namespace makerbit {
           new Subscription("$ESP/connection", (status: number) => {
             espState.connectionStatus = status;
           })
-        );
-
-        control.runInParallel(() => {
-          readSerialMessages(espState);
-        });
-
-        control.setInterval(
-          () => {
-            serialWriteString("device\n");
-          },
-          500,
-          control.IntervalMode.Timeout
-        );
-
-        control.setInterval(
-          () => {
-            serialWriteString("connection-status\n");
-          },
-          1000,
-          control.IntervalMode.Timeout
         );
       }
     }
@@ -413,7 +411,7 @@ namespace makerbit {
       autoConnectToESP();
       espState.room = room;
       espState.meeting = normalize(meeting);
-      updateMqttRoot();
+      sendMqttRoot();
     }
 
     /**
@@ -432,7 +430,7 @@ namespace makerbit {
       return espState.connectionStatus >= status;
     }
 
-    function updateMqttRoot() {
+    function sendMqttRoot() {
       serialWriteString("mqtt-root ");
       serialWriteString(espState.meeting);
       serialWriteString("/");
