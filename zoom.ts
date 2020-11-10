@@ -63,11 +63,11 @@ namespace makerbit {
       serialWriteString('"\n');
     }
 
-    function processSubscriptions(state: EspState, message: string) {
+    function processMessage(message: string, subscriptions: Subscription[]) {
       const nameValue = splitNameValue(message);
 
-      for (let i = 0; i < state.subscriptions.length; ++i) {
-        const sub = state.subscriptions[i];
+      for (let i = 0; i < subscriptions.length; ++i) {
+        const sub = subscriptions[i];
 
         if (nameValue[0].indexOf(sub.name) == 0) {
           if (sub.name == SCREENSHOT_TOPIC) {
@@ -79,7 +79,7 @@ namespace makerbit {
       }
     }
 
-    function readSerialMessages(state: EspState) {
+    function readSerialMessages(subscriptions: Subscription[]) {
       let message: string = "";
 
       while (true) {
@@ -87,7 +87,7 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              processSubscriptions(state, message);
+              processMessage(message, subscriptions);
               message = "";
             } else {
               message = message.concat(String.fromCharCode(r));
@@ -241,20 +241,9 @@ namespace makerbit {
         serial.setRxBufferSize(32);
         serial.redirect(espRX, espTX, BaudRate.BaudRate9600);
 
-        // establish clean connection 
+        // establish clean connection
         while (serial.read() != -1) {}
         serialWriteString("----- -----\n");
-
-        // request initial status on new serial connection
-        control.setInterval(
-          () => {
-            serialWriteString("device\n");
-            basic.pause(400);
-            serialWriteString("connection-status\n");
-          },
-          200,
-          control.IntervalMode.Timeout
-        );
       }
 
       if (!espState) {
@@ -270,30 +259,53 @@ namespace makerbit {
         };
 
         control.runInParallel(() => {
-          readSerialMessages(espState);
+          readSerialMessages(espState.subscriptions);
         });
 
-        // keep last error
-        espState.subscriptions.push(
-          new Subscription("$ESP/error", (value: string) => {
-            espState.lastError = parseInt(value);
-          })
+        // poll for device version
+        const deviceInterval = control.setInterval(
+          () => {
+            serialWriteString("device\n");
+          },
+          300,
+          control.IntervalMode.Interval
+        );
+
+        // poll for intial connection status
+        const connectionStatusInterval = control.setInterval(
+          () => {
+            serialWriteString("connection-status\n");
+          },
+          850,
+          control.IntervalMode.Interval
         );
 
         // keep device version
         espState.subscriptions.push(
           new Subscription("$ESP/device", (value: string) => {
             espState.device = value;
-
-            if (espState.connectionStatus < ZoomConnectionStatus.ESP) {
-              espState.connectionStatus = ZoomConnectionStatus.ESP;
-            }
+            control.clearInterval(
+              deviceInterval,
+              control.IntervalMode.Interval
+            );
           })
         );
 
+        // keep connection status
         espState.subscriptions.push(
           new Subscription("$ESP/connection", (status: number) => {
             espState.connectionStatus = status;
+            control.clearInterval(
+              connectionStatusInterval,
+              control.IntervalMode.Interval
+            );
+          })
+        );
+
+        // keep last error
+        espState.subscriptions.push(
+          new Subscription("$ESP/error", (value: string) => {
+            espState.lastError = parseInt(value);
           })
         );
       }
