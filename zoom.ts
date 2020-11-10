@@ -244,6 +244,7 @@ namespace makerbit {
         // establish clean connection
         while (serial.read() != -1) {}
         serialWriteString("----- -----\n");
+        serialWriteString("unsub-all\n");
       }
 
       if (!espState) {
