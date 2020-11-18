@@ -268,7 +268,10 @@ namespace makerbit {
         // Notify connnection status
         control.setInterval(
           () => {
-            processMessage(CONNECTION_TOPIC + " 0", espState.subscriptions);
+            processMessage(
+              CONNECTION_TOPIC + " " + ZoomConnectionStatus.NONE,
+              espState.subscriptions
+            );
           },
           1,
           control.IntervalMode.Timeout
@@ -307,10 +310,12 @@ namespace makerbit {
         espState.subscriptions.push(
           new Subscription("$ESP/connection", (status: number) => {
             espState.connectionStatus = status;
-            control.clearInterval(
-              connectionStatusInterval,
-              control.IntervalMode.Interval
-            );
+            if (status > ZoomConnectionStatus.NONE) {
+              control.clearInterval(
+                connectionStatusInterval,
+                control.IntervalMode.Interval
+              );
+            }
           })
         );
 
