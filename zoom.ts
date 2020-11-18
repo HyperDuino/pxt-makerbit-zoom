@@ -1,5 +1,5 @@
 const enum ZoomConnectionStatus {
-  //% block="ESP device"
+  //% block="None"
   NONE = 0,
   //% block="ESP device"
   ESP = 1,
@@ -27,6 +27,8 @@ namespace makerbit {
     const SCREENSHOT_TOPIC = "_sc";
     const STRING_TOPIC = "_st";
     const NUMBER_TOPIC = "_nu";
+    const CONNECTION_TOPIC = "$ESP/connection";
+    const ERROR_TOPIC = "$ESP/error";
 
     let espState: EspState = undefined;
     let serialWriteString = (text: string) => {
@@ -187,7 +189,7 @@ namespace makerbit {
     //% weight=29
     export function onError(handler: () => void) {
       autoConnectToESP();
-      espState.subscriptions.push(new Subscription("$ESP/error", handler));
+      espState.subscriptions.push(new Subscription(ERROR_TOPIC, handler));
     }
 
     /**
@@ -199,7 +201,7 @@ namespace makerbit {
     //% weight=30
     export function onConnectionStatus(handler: () => void) {
       autoConnectToESP();
-      espState.subscriptions.push(new Subscription("$ESP/connection", handler));
+      espState.subscriptions.push(new Subscription(CONNECTION_TOPIC, handler));
     }
 
     /**
@@ -263,21 +265,21 @@ namespace makerbit {
           readSerialMessages(espState.subscriptions);
         });
 
+        // Notify connnection status
+        control.setInterval(
+          () => {
+            processMessage(CONNECTION_TOPIC + " 0", espState.subscriptions);
+          },
+          1,
+          control.IntervalMode.Timeout
+        );
+
         // poll for device version
         const deviceInterval = control.setInterval(
           () => {
             serialWriteString("device\n");
           },
           300,
-          control.IntervalMode.Interval
-        );
-
-        // poll for intial connection status
-        const connectionStatusInterval = control.setInterval(
-          () => {
-            serialWriteString("connection-status\n");
-          },
-          850,
           control.IntervalMode.Interval
         );
 
@@ -290,6 +292,15 @@ namespace makerbit {
               control.IntervalMode.Interval
             );
           })
+        );
+
+        // poll for intial connection status
+        const connectionStatusInterval = control.setInterval(
+          () => {
+            serialWriteString("connection-status\n");
+          },
+          850,
+          control.IntervalMode.Interval
         );
 
         // keep connection status
