@@ -424,7 +424,7 @@ namespace makerbit {
       autoConnectToESP();
       espState.room = room;
       espState.meeting = normalize(meeting);
-      sendMqttRoot();
+      setMqttApplicationPrefix();
     }
 
     /**
@@ -443,8 +443,8 @@ namespace makerbit {
       return espState.connectionStatus >= status;
     }
 
-    function sendMqttRoot() {
-      serialWriteString("mqtt-root ");
+    function setMqttApplicationPrefix() {
+      serialWriteString("mqtt-app ");
       serialWriteString(espState.meeting);
       serialWriteString("/");
       serialWriteString(espState.room);
