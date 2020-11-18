@@ -336,7 +336,7 @@ namespace makerbit {
     //% blockHidden=true
     export function getDevice() {
       if (!espState) {
-        return "0.0.0";
+        return "0";
       }
       return espState.device;
     }
