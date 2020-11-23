@@ -35,11 +35,11 @@ namespace makerbit {
       serial.writeString(text);
     };
 
-    function normalize(value: string) {
+    function normalize(value: string): string {
       return value.replaceAll(" ", "");
     }
 
-    function splitNameValue(message: string) {
+    function splitNameValue(message: string): string[] {
       const splitIdx = message.indexOf(" ");
       if (splitIdx < 0) {
         return [message, ""];
@@ -50,7 +50,7 @@ namespace makerbit {
       return res;
     }
 
-    function publish(name: string, value: string) {
+    function publish(name: string, value: string): void {
       serialWriteString("pub ");
       serialWriteString(normalize(name));
       serialWriteString(' "');
@@ -59,13 +59,16 @@ namespace makerbit {
       serialWriteString("\n");
     }
 
-    function subscribe(topic: string) {
+    function subscribe(topic: string): void {
       serialWriteString("sub ");
       serialWriteString(topic);
       serialWriteString('"\n');
     }
 
-    function processMessage(message: string, subscriptions: Subscription[]) {
+    function processMessage(
+      message: string,
+      subscriptions: Subscription[]
+    ): void {
       const nameValue = splitNameValue(message);
 
       for (let i = 0; i < subscriptions.length; ++i) {
@@ -81,7 +84,7 @@ namespace makerbit {
       }
     }
 
-    function readSerialMessages(subscriptions: Subscription[]) {
+    function readSerialMessages(subscriptions: Subscription[]): void {
       let message: string = "";
 
       while (true) {
@@ -123,7 +126,7 @@ namespace makerbit {
     //% weight=49
     export function onReceivedString(
       handler: (receivedString: string) => void
-    ) {
+    ): void {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(STRING_TOPIC, handler));
       subscribe(STRING_TOPIC);
@@ -139,7 +142,7 @@ namespace makerbit {
     //% weight=50
     export function onReceivedNumber(
       handler: (receivedNumber: number) => void
-    ) {
+    ): void {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(NUMBER_TOPIC, handler));
       subscribe(NUMBER_TOPIC);
@@ -155,7 +158,7 @@ namespace makerbit {
     //% weight=48
     export function onReceivedScreenshot(
       handler: (receivedScreenshot: Image) => void
-    ) {
+    ): void {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(SCREENSHOT_TOPIC, handler));
       subscribe(SCREENSHOT_TOPIC);
@@ -173,7 +176,7 @@ namespace makerbit {
     export function onReceivedNumberInChannel(
       channel: number,
       handler: (receivedNumber: number) => void
-    ) {
+    ): void {
       autoConnectToESP();
       const topic = "" + Math.floor(channel);
       espState.subscriptions.push(new Subscription(topic, handler));
@@ -187,7 +190,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_on_error"
     //% block="on zoom error"
     //% weight=29
-    export function onError(handler: () => void) {
+    export function onError(handler: () => void): void {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(ERROR_TOPIC, handler));
     }
@@ -199,7 +202,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_on_connection_status"
     //% block="on zoom connection status"
     //% weight=30
-    export function onConnectionStatus(handler: () => void) {
+    export function onConnectionStatus(handler: () => void): void {
       autoConnectToESP();
       espState.subscriptions.push(new Subscription(CONNECTION_TOPIC, handler));
     }
@@ -213,7 +216,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_connect_wifi"
     //% block="zoom connect to WiFi network %ssid | and password %password"
     //% weight=98
-    export function connectWiFi(ssid: string, password: string) {
+    export function connectWiFi(ssid: string, password: string): void {
       autoConnectToESP();
 
       serialWriteString('wifi "');
@@ -221,6 +224,75 @@ namespace makerbit {
       serialWriteString('" "');
       serialWriteString(password);
       serialWriteString('"\n');
+    }
+
+    function configureSubscriptionsAndPolling(): void {
+      // Notify connnection status
+      control.setInterval(
+        () => {
+          processMessage(
+            CONNECTION_TOPIC + " " + ZoomConnectionStatus.NONE,
+            espState.subscriptions
+          );
+        },
+        1,
+        control.IntervalMode.Timeout
+      );
+
+      // poll for device version
+      const deviceInterval = control.setInterval(
+        () => {
+          serialWriteString("device\n");
+        },
+        300,
+        control.IntervalMode.Interval
+      );
+
+      // keep device version
+      espState.subscriptions.push(
+        new Subscription("$ESP/device", (value: string) => {
+          espState.device = value;
+          control.clearInterval(deviceInterval, control.IntervalMode.Interval);
+        })
+      );
+
+      // poll for intial connection status
+      const connectionStatusInterval = control.setInterval(
+        () => {
+          serialWriteString("connection-status\n");
+        },
+        850,
+        control.IntervalMode.Interval
+      );
+
+      // keep connection status
+      espState.subscriptions.push(
+        new Subscription("$ESP/connection", (status: number) => {
+          espState.connectionStatus = status;
+          if (status > ZoomConnectionStatus.NONE) {
+            control.clearInterval(
+              connectionStatusInterval,
+              control.IntervalMode.Interval
+            );
+          }
+        })
+      );
+
+      // poll for connection status in regulare intervals
+      control.setInterval(
+        () => {
+          serialWriteString("connection-status\n");
+        },
+        62 * 1000,
+        control.IntervalMode.Interval
+      );
+
+      // keep last error
+      espState.subscriptions.push(
+        new Subscription("$ESP/error", (value: string) => {
+          espState.lastError = parseInt(value);
+        })
+      );
     }
 
     /**
@@ -234,7 +306,7 @@ namespace makerbit {
     //% espRX.defl=SerialPin.P0
     //% espTX.defl=SerialPin.P1
     //% weight=99
-    export function connectESP(espRX: SerialPin, espTX: SerialPin) {
+    export function connectESP(espRX: SerialPin, espTX: SerialPin): void {
       if (control.isSimulator()) {
         serialWriteString = (text: string) => {};
       }
@@ -265,67 +337,11 @@ namespace makerbit {
           readSerialMessages(espState.subscriptions);
         });
 
-        // Notify connnection status
-        control.setInterval(
-          () => {
-            processMessage(
-              CONNECTION_TOPIC + " " + ZoomConnectionStatus.NONE,
-              espState.subscriptions
-            );
-          },
-          1,
-          control.IntervalMode.Timeout
-        );
-
-        // poll for device version
-        const deviceInterval = control.setInterval(
-          () => {
-            serialWriteString("device\n");
-          },
-          300,
-          control.IntervalMode.Interval
-        );
-
-        // keep device version
-        espState.subscriptions.push(
-          new Subscription("$ESP/device", (value: string) => {
-            espState.device = value;
-            control.clearInterval(
-              deviceInterval,
-              control.IntervalMode.Interval
-            );
-          })
-        );
-
-        // poll for intial connection status
-        const connectionStatusInterval = control.setInterval(
-          () => {
-            serialWriteString("connection-status\n");
-          },
-          850,
-          control.IntervalMode.Interval
-        );
-
-        // keep connection status
-        espState.subscriptions.push(
-          new Subscription("$ESP/connection", (status: number) => {
-            espState.connectionStatus = status;
-            if (status > ZoomConnectionStatus.NONE) {
-              control.clearInterval(
-                connectionStatusInterval,
-                control.IntervalMode.Interval
-              );
-            }
-          })
-        );
-
-        // keep last error
-        espState.subscriptions.push(
-          new Subscription("$ESP/error", (value: string) => {
-            espState.lastError = parseInt(value);
-          })
-        );
+        configureSubscriptionsAndPolling();
       }
+
+      espState.espRX = espRX;
+      espState.espTX = espTX;
     }
 
     /**
@@ -335,7 +351,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_get_last_error"
     //% block="zoom error"
     //% weight=89
-    export function getLastError() {
+    export function getLastError(): number {
       if (!espState) {
         return 0;
       }
@@ -350,7 +366,7 @@ namespace makerbit {
     //% block="zoom device version"
     //% weight=88
     //% blockHidden=true
-    export function getDevice() {
+    export function getDevice(): string {
       if (!espState) {
         return "0";
       }
@@ -364,7 +380,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_get_connection_status"
     //% block="zoom connection"
     //% weight=90
-    export function getConnectionStatus() {
+    export function getConnectionStatus(): ZoomConnectionStatus {
       if (!espState) {
         return ZoomConnectionStatus.NONE;
       }
@@ -385,7 +401,7 @@ namespace makerbit {
     //% block="zoom send string %value"
     //% value.shadowOptions.toString=true
     //% weight=79
-    export function sendString(value: string) {
+    export function sendString(value: string): void {
       autoConnectToESP();
       publish(STRING_TOPIC, value);
     }
@@ -397,7 +413,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_send_number"
     //% block="zoom send number %value"
     //% weight=80
-    export function sendNumber(value: number) {
+    export function sendNumber(value: number): void {
       autoConnectToESP();
       publish(NUMBER_TOPIC, "" + Math.roundWithPrecision(value, 2));
     }
@@ -409,7 +425,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_send_screenshot"
     //% block="zoom send screenshot"
     //% weight=78
-    export function sendScreenshot() {
+    export function sendScreenshot(): void {
       autoConnectToESP();
       publish(SCREENSHOT_TOPIC, "" + encodeImage(led.screenshot()));
     }
@@ -422,7 +438,7 @@ namespace makerbit {
     //% block="zoom send|number %value| to channel %channel"
     //% channel.min=0 channel.max=255 channel.defl=1
     //% weight=80
-    export function sendNumberToChannel(value: number, channel: number) {
+    export function sendNumberToChannel(value: number, channel: number): void {
       autoConnectToESP();
       publish("" + Math.floor(channel), "" + Math.roundWithPrecision(value, 2));
     }
@@ -436,7 +452,7 @@ namespace makerbit {
     //% meetingId.defl=123-456-7890
     //% room.defl=1
     //% weight=97
-    export function connectMeetingRoom(meeting: string, room: string) {
+    export function connectMeetingRoom(meeting: string, room: string): void {
       autoConnectToESP();
       espState.room = room;
       espState.meeting = normalize(meeting);
