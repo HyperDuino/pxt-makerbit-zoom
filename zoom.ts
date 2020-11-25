@@ -19,6 +19,7 @@ namespace makerbit {
       meeting: string;
       room: string;
       connectionStatus: number;
+      notifiedConnectionStatus: number;
       device: string;
       espRX: SerialPin;
       espTX: SerialPin;
@@ -204,7 +205,14 @@ namespace makerbit {
     //% weight=30
     export function onConnectionStatus(handler: () => void): void {
       autoConnectToESP();
-      espState.subscriptions.push(new Subscription(CONNECTION_TOPIC, handler));
+      espState.subscriptions.push(
+        new Subscription(CONNECTION_TOPIC, () => {
+          if (espState.connectionStatus != espState.notifiedConnectionStatus) {
+            espState.notifiedConnectionStatus = espState.connectionStatus;
+            handler();
+          }
+        })
+      );
     }
 
     /**
@@ -328,6 +336,7 @@ namespace makerbit {
           meeting: "" + randint(1111111111, 9999999999),
           room: "1",
           connectionStatus: ZoomConnectionStatus.NONE,
+          notifiedConnectionStatus: -1,
           device: "0.0.0",
           espRX: espRX,
           espTX: espTX,
