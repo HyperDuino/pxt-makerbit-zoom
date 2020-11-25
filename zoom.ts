@@ -494,29 +494,25 @@ namespace makerbit {
 
     function encodeImage(image: Image): number {
       let bits = 0;
-      for (let x = 0; x < 5; x++) {
-        for (let y = 0; y < 5; y++) {
+      for (let x = 0; x <= 4; x++) {
+        for (let y = 0; y <= 4; y++) {
           bits = bits << 1;
           if (image.pixel(x, y)) {
             bits = bits + 1;
           }
         }
       }
-
       return bits;
     }
 
-    function decodeImage(value: number): Image {
-      let bits2 = value;
-
+    function decodeImage(bits: number): Image {
       let img = images.createImage("");
-      for (let x2 = 4; x2 >= 0; x2--) {
-        for (let y2 = 4; y2 >= 0; y2--) {
-          img.setPixel(x2, y2, (bits2 & 0x01) == 1);
-          bits2 = bits2 >> 1;
+      for (let x = 4; x >= 0; x--) {
+        for (let y = 4; y >= 0; y--) {
+          img.setPixel(x, y, (bits & 0x01) == 1);
+          bits = bits >> 1;
         }
       }
-
       return img;
     }
   }
