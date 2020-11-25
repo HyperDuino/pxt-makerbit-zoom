@@ -77,7 +77,7 @@ namespace makerbit {
 
         if (nameValue[0].indexOf(sub.name) == 0) {
           if (sub.name == SCREENSHOT_TOPIC) {
-            sub.handler(decodeImage(nameValue[1]));
+            sub.handler(decodeImage(parseInt(nameValue[1])));
           } else {
             sub.handler(nameValue[1]);
           }
@@ -492,217 +492,7 @@ namespace makerbit {
       serialWriteString("\n");
     }
 
-    function base64encode(data: number[]): string {
-      const base64EncodeChars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-      let out = "";
-      const len = data.length;
-      let j = 0;
-      while (j < len) {
-        const c1 = data[j++] & 0xff;
-        if (j == len) {
-          out += base64EncodeChars.charAt(c1 >> 2);
-          out += base64EncodeChars.charAt((c1 & 0x3) << 4);
-          out += "==";
-          break;
-        }
-        const c2 = data[j++];
-        if (j == len) {
-          out += base64EncodeChars.charAt(c1 >> 2);
-          out += base64EncodeChars.charAt(
-            ((c1 & 0x3) << 4) | ((c2 & 0xf0) >> 4)
-          );
-          out += base64EncodeChars.charAt((c2 & 0xf) << 2);
-          out += "=";
-          break;
-        }
-        const c3 = data[j++];
-        out += base64EncodeChars.charAt(c1 >> 2);
-        out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xf0) >> 4));
-        out += base64EncodeChars.charAt(((c2 & 0xf) << 2) | ((c3 & 0xc0) >> 6));
-        out += base64EncodeChars.charAt(c3 & 0x3f);
-      }
-      return out;
-    }
-
-    function base64decode(str: string): number[] {
-      const base64DecodeChars = [
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        62,
-        -1,
-        -1,
-        -1,
-        63,
-        52,
-        53,
-        54,
-        55,
-        56,
-        57,
-        58,
-        59,
-        60,
-        61,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        -1,
-        -1,
-        -1,
-        -1,
-        -1,
-      ];
-
-      let c12, c22, c32, c4;
-      let k, len2;
-      let out2 = [];
-
-      len2 = str.length;
-      k = 0;
-
-      while (k < len2) {
-        /* c1 */
-        do {
-          c12 = base64DecodeChars[str.charCodeAt(k++) & 0xff];
-        } while (k < len2 && c12 == -1);
-        if (c12 == -1) break;
-
-        /* c2 */
-        do {
-          c22 = base64DecodeChars[str.charCodeAt(k++) & 0xff];
-        } while (k < len2 && c22 == -1);
-        if (c22 == -1) break;
-
-        out2.push((c12 << 2) | ((c22 & 0x30) >> 4));
-
-        /* c3 */
-        do {
-          c32 = str.charCodeAt(k++) & 0xff;
-          if (c32 == 61) return out2;
-          c32 = base64DecodeChars[c32];
-        } while (k < len2 && c32 == -1);
-        if (c32 == -1) break;
-
-        out2.push(((c22 & 0xf) << 4) | ((c32 & 0x3c) >> 2));
-
-        /* c4 */
-        do {
-          c4 = str.charCodeAt(k++) & 0xff;
-          if (c4 == 61) return out2;
-          c4 = base64DecodeChars[c4];
-        } while (k < len2 && c4 == -1);
-        if (c4 == -1) break;
-        out2.push(((c32 & 0x03) << 6) | c4);
-      }
-      return out2;
-    }
-
-    function encodeImage(image: Image): string {
+    function encodeImage(image: Image): number {
       let bits = 0;
       for (let x = 0; x < 5; x++) {
         for (let y = 0; y < 5; y++) {
@@ -713,23 +503,11 @@ namespace makerbit {
         }
       }
 
-      let bytes: number[] = [];
-      for (let index = 0; index < 4; index++) {
-        bytes.push(bits & 0xff);
-        bits = bits >> 8;
-      }
-
-      return base64encode(bytes);
+      return bits;
     }
 
-    function decodeImage(value: string): Image {
-      let bytes2 = base64decode(value);
-
-      let bits2 = 0;
-      for (let l = 3; l >= 0; l--) {
-        bits2 = bits2 << 8;
-        bits2 = bits2 + bytes2[l];
-      }
+    function decodeImage(value: number): Image {
+      let bits2 = value;
 
       let img = images.createImage("");
       for (let x2 = 4; x2 >= 0; x2--) {
