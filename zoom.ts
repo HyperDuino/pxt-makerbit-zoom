@@ -93,7 +93,13 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              processMessage(message, subscriptions);
+              control.setInterval(
+                () => {
+                  processMessage(message, subscriptions);
+                },
+                0,
+                control.IntervalMode.Immediate
+              );
               message = "";
             } else {
               message = message.concat(String.fromCharCode(r));
@@ -326,7 +332,6 @@ namespace makerbit {
         // establish clean connection
         while (serial.read() != -1) {}
         serialWriteString("----- -----\n");
-        serialWriteString("unsub-all\n");
       }
 
       if (!espState) {
