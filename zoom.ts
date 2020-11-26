@@ -31,9 +31,11 @@ namespace makerbit {
     const STRING_TOPIC = "_st";
     const NUMBER_TOPIC = "_nu";
     const CONNECTION_TOPIC = "$ESP/connection";
+    const DEVICE_TOPIC = "$ESP/device";
     const ERROR_TOPIC = "$ESP/error";
 
     let espState: EspState = undefined;
+
     let serialWriteString = (text: string) => {
       serial.writeString(text);
     };
@@ -267,15 +269,15 @@ namespace makerbit {
       );
 
       // keep device version
-      espState.subscriptions.push(
-        new Subscription("$ESP/device", (value: string) => {
+      espState.subscriptions.insertAt(0,
+        new Subscription(DEVICE_TOPIC, (value: string) => {
           espState.device = value;
           control.clearInterval(deviceInterval, control.IntervalMode.Interval);
         })
       );
 
       // poll for intial connection status
-      const connectionStatusInterval = control.setInterval(
+      const initialConnectionStatusInterval = control.setInterval(
         () => {
           serialWriteString("connection-status\n");
         },
@@ -284,12 +286,12 @@ namespace makerbit {
       );
 
       // keep connection status
-      espState.subscriptions.push(
-        new Subscription("$ESP/connection", (status: number) => {
+      espState.subscriptions.insertAt(0,
+        new Subscription(CONNECTION_TOPIC, (status: number) => {
           espState.connectionStatus = status;
           if (status > ZoomConnectionStatus.NONE) {
             control.clearInterval(
-              connectionStatusInterval,
+              initialConnectionStatusInterval,
               control.IntervalMode.Interval
             );
           }
@@ -306,8 +308,8 @@ namespace makerbit {
       );
 
       // keep last error
-      espState.subscriptions.push(
-        new Subscription("$ESP/error", (value: string) => {
+      espState.subscriptions.insertAt(0,
+        new Subscription(ERROR_TOPIC, (value: string) => {
           espState.lastError = parseInt(value);
         })
       );
