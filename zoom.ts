@@ -23,6 +23,8 @@ namespace makerbit {
       device: string;
       espRX: SerialPin;
       espTX: SerialPin;
+      ssid: string;
+      wiFiPassword: string;
     }
 
     const SCREENSHOT_TOPIC = "_sc";
@@ -229,11 +231,16 @@ namespace makerbit {
     //% weight=98
     export function connectWiFi(ssid: string, password: string): void {
       autoConnectToESP();
+      espState.ssid = ssid;
+      espState.wiFiPassword = password;
+      setWiFi();
+    }
 
+    function setWiFi() {
       serialWriteString('wifi "');
-      serialWriteString(ssid);
+      serialWriteString(espState.ssid);
       serialWriteString('" "');
-      serialWriteString(password);
+      serialWriteString(espState.wiFiPassword);
       serialWriteString('"\n');
     }
 
@@ -342,6 +349,8 @@ namespace makerbit {
           device: "0.0.0",
           espRX: espRX,
           espTX: espTX,
+          ssid: "",
+          wiFiPassword: ""
         };
 
         control.runInParallel(() => {
@@ -353,6 +362,12 @@ namespace makerbit {
 
       espState.espRX = espRX;
       espState.espTX = espTX;
+
+      setMqttApplicationPrefix();
+
+      if (!espState.ssid.isEmpty()) {
+        setWiFi();
+      }
     }
 
     /**
