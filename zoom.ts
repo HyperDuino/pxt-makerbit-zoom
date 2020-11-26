@@ -70,6 +70,22 @@ namespace makerbit {
       serialWriteString('"\n');
     }
 
+    class Subscription {
+      name: string;
+      runInBackground: boolean;
+      handler: (value: string | number | Image) => void;
+
+      constructor(
+        name: string,
+        handler: (value: string | number | Image) => void,
+        runInBackground: boolean = true
+      ) {
+        this.name = normalize(name);
+        this.handler = handler;
+        this.runInBackground = runInBackground;
+      }
+    }
+
     function processMessage(
       message: string,
       subscriptions: Subscription[]
@@ -80,14 +96,21 @@ namespace makerbit {
         const sub = subscriptions[i];
 
         if (nameValue[0].indexOf(sub.name) == 0) {
-          control.runInParallel(() => {
-            if (sub.name == SCREENSHOT_TOPIC) {
-              sub.handler(decodeImage(parseInt(nameValue[1])));
-            } else {
-              sub.handler(nameValue[1]);
-            }
-          });
-          basic.pause(0);
+          let value: string | number | Image;
+          if (sub.name == SCREENSHOT_TOPIC) {
+            value = decodeImage(parseInt(nameValue[1]));
+          } else {
+            value = nameValue[1];
+          }
+
+          if (sub.runInBackground) {
+            control.runInParallel(() => {
+              sub.handler(value);
+            });
+            basic.pause(0);
+          } else {
+            sub.handler(value);
+          }
         }
       }
     }
@@ -108,19 +131,6 @@ namespace makerbit {
           }
         }
         basic.pause(5);
-      }
-    }
-
-    class Subscription {
-      name: string;
-      handler: (value: string | number | Image) => void;
-
-      constructor(
-        name: string,
-        handler: (value: string | number | Image) => void
-      ) {
-        this.name = normalize(name);
-        this.handler = handler;
       }
     }
 
@@ -214,7 +224,7 @@ namespace makerbit {
       autoConnectToESP();
       espState.subscriptions.push(
         new Subscription(CONNECTION_TOPIC, () => {
-          if (espState.connectionStatus != espState.notifiedConnectionStatus) {
+          if (espState.notifiedConnectionStatus != espState.connectionStatus) {
             espState.notifiedConnectionStatus = espState.connectionStatus;
             handler();
           }
@@ -269,11 +279,19 @@ namespace makerbit {
       );
 
       // keep device version
-      espState.subscriptions.insertAt(0,
-        new Subscription(DEVICE_TOPIC, (value: string) => {
-          espState.device = value;
-          control.clearInterval(deviceInterval, control.IntervalMode.Interval);
-        })
+      espState.subscriptions.insertAt(
+        0,
+        new Subscription(
+          DEVICE_TOPIC,
+          (value: string) => {
+            espState.device = value;
+            control.clearInterval(
+              deviceInterval,
+              control.IntervalMode.Interval
+            );
+          },
+          false
+        )
       );
 
       // poll for intial connection status
@@ -286,16 +304,21 @@ namespace makerbit {
       );
 
       // keep connection status
-      espState.subscriptions.insertAt(0,
-        new Subscription(CONNECTION_TOPIC, (status: number) => {
-          espState.connectionStatus = status;
-          if (status > ZoomConnectionStatus.NONE) {
-            control.clearInterval(
-              initialConnectionStatusInterval,
-              control.IntervalMode.Interval
-            );
-          }
-        })
+      espState.subscriptions.insertAt(
+        0,
+        new Subscription(
+          CONNECTION_TOPIC,
+          (status: number) => {
+            espState.connectionStatus = status;
+            if (status > ZoomConnectionStatus.NONE) {
+              control.clearInterval(
+                initialConnectionStatusInterval,
+                control.IntervalMode.Interval
+              );
+            }
+          },
+          false
+        )
       );
 
       // poll for connection status in regulare intervals
@@ -308,10 +331,15 @@ namespace makerbit {
       );
 
       // keep last error
-      espState.subscriptions.insertAt(0,
-        new Subscription(ERROR_TOPIC, (value: string) => {
-          espState.lastError = parseInt(value);
-        })
+      espState.subscriptions.insertAt(
+        0,
+        new Subscription(
+          ERROR_TOPIC,
+          (value: string) => {
+            espState.lastError = parseInt(value);
+          },
+          false
+        )
       );
     }
 
@@ -352,7 +380,7 @@ namespace makerbit {
           espRX: espRX,
           espTX: espTX,
           ssid: "",
-          wiFiPassword: ""
+          wiFiPassword: "",
         };
 
         control.runInParallel(() => {
