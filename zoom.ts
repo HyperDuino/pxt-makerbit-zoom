@@ -102,21 +102,10 @@ namespace makerbit {
           } else {
             value = nameValue[1];
           }
-
           if (sub.runInBackground) {
-
-            if (sub.name == CONNECTION_TOPIC) {
-              if (espState.notifiedConnectionStatus != espState.connectionStatus) {
-                espState.notifiedConnectionStatus = espState.connectionStatus;
-                control.runInParallel(() => {
-                  sub.handler(value);
-                });
-              }
-            } else {
-              control.runInParallel(() => {
-                sub.handler(value);
-              });
-            }
+            control.runInParallel(() => {
+              sub.handler(value);
+            });
           } else {
             sub.handler(value);
           }
@@ -233,9 +222,9 @@ namespace makerbit {
     export function onConnectionStatus(handler: () => void): void {
       autoConnectToESP();
       espState.subscriptions.push(
-        new Subscription(CONNECTION_TOPIC, () => {
-          if (espState.notifiedConnectionStatus != espState.connectionStatus) {
-            espState.notifiedConnectionStatus = espState.connectionStatus;
+        new Subscription(CONNECTION_TOPIC, (status: number) => {
+          if (espState.notifiedConnectionStatus != status) {
+            espState.notifiedConnectionStatus = status;
             handler();
           }
         })
