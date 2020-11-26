@@ -76,11 +76,14 @@ namespace makerbit {
         const sub = subscriptions[i];
 
         if (nameValue[0].indexOf(sub.name) == 0) {
-          if (sub.name == SCREENSHOT_TOPIC) {
-            sub.handler(decodeImage(parseInt(nameValue[1])));
-          } else {
-            sub.handler(nameValue[1]);
-          }
+          control.runInParallel(() => {
+            if (sub.name == SCREENSHOT_TOPIC) {
+              sub.handler(decodeImage(parseInt(nameValue[1])));
+            } else {
+              sub.handler(nameValue[1]);
+            }
+          });
+          basic.pause(0);
         }
       }
     }
@@ -93,9 +96,8 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              control.runInParallel(() => processMessage(message, subscriptions));
+              processMessage(message, subscriptions);
               message = "";
-              basic.pause(0);
             } else {
               message = message.concat(String.fromCharCode(r));
             }
