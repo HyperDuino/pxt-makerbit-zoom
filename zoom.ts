@@ -93,14 +93,9 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              control.setInterval(
-                () => {
-                  processMessage(message, subscriptions);
-                },
-                0,
-                control.IntervalMode.Immediate
-              );
+              control.runInParallel(() => processMessage(message, subscriptions));
               message = "";
+              basic.pause(0);
             } else {
               message = message.concat(String.fromCharCode(r));
             }
