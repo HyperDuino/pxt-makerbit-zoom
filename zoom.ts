@@ -104,10 +104,19 @@ namespace makerbit {
           }
 
           if (sub.runInBackground) {
-            control.runInParallel(() => {
-              sub.handler(value);
-            });
-            basic.pause(0);
+
+            if (sub.name == CONNECTION_TOPIC) {
+              if (espState.notifiedConnectionStatus != espState.connectionStatus) {
+                espState.notifiedConnectionStatus = espState.connectionStatus;
+                control.runInParallel(() => {
+                  sub.handler(value);
+                });
+              }
+            } else {
+              control.runInParallel(() => {
+                sub.handler(value);
+              });
+            }
           } else {
             sub.handler(value);
           }
@@ -124,6 +133,7 @@ namespace makerbit {
           if (r != -1) {
             if (r == Delimiters.NewLine) {
               processMessage(message, subscriptions);
+              basic.pause(0);
               message = "";
             } else {
               message = message.concat(String.fromCharCode(r));
