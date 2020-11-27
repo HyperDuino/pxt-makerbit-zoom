@@ -223,8 +223,8 @@ namespace makerbit {
       autoConnectToESP();
       espState.subscriptions.push(
         new Subscription(CONNECTION_TOPIC, (status: number) => {
-          if (espState.notifiedConnectionStatus != status) {
-            espState.notifiedConnectionStatus = status;
+          if (espState.notifiedConnectionStatus != espState.connectionStatus) {
+            espState.notifiedConnectionStatus = espState.connectionStatus;
             handler();
           }
         })
