@@ -16,5 +16,15 @@
     "testFiles": [
         "test.ts"
     ],
-    "public": true
+    "public": true,
+    "yotta": {
+        "config": {
+            "microbit-dal": {
+                "bluetooth": {
+                    "enabled": 0,
+                    "pairing_mode": 0
+                }
+            }
+        }
+    }
 }
