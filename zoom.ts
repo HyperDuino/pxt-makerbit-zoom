@@ -25,6 +25,8 @@ namespace makerbit {
       espTX: SerialPin;
       ssid: string;
       wiFiPassword: string;
+      intervalIdDevice: number;
+      intervalIdConnection: number;
     }
 
     const SCREENSHOT_TOPIC = "_sc";
@@ -47,7 +49,7 @@ namespace makerbit {
       return value.replaceAll(" ", "");
     }
 
-    function splitNameValue(message: string): string[] {
+    function splitTopicValue(message: string): string[] {
       const splitIdx = message.indexOf(" ");
       if (splitIdx < 0) {
         return [message, ""];
@@ -92,7 +94,7 @@ namespace makerbit {
         this.value = value;
       }
 
-      notifyNewValue() {
+      notifyUpdate() {
         if (!this.value.isEmpty()) {
           let decodedValue: string | number | Image = this.value;
 
@@ -106,36 +108,41 @@ namespace makerbit {
       }
     }
 
-    function processSubscriptions(subscriptions: Subscription[]): void {
+    function notificationLoop(subscriptions: Subscription[]): void {
       while (true) {
         control.waitForEvent(MAKERBIT_ID_TOPIC, MAKERBIT_TOPIC_EVT_RECV);
 
-        for (let i = 0; i < subscriptions.length; ++i) {
-          const sub = subscriptions[i];
-          sub.notifyNewValue();
-        }
+        subscriptions.forEach((subscription) => {
+          subscription.notifyUpdate();
+        });
 
         basic.pause(1);
       }
     }
 
-    function processMessage(
-      message: string,
-      subscriptions: Subscription[]
-    ): void {
-      const nameValue = splitNameValue(message);
+    function processMqttMessage(topic: string, value: string): void {
+      if (topic.indexOf(CONNECTION_TOPIC) == 0) {
+        espState.connectionStatus = parseInt(value);
+      } else if (topic.indexOf(ERROR_TOPIC) == 0) {
+        espState.lastError = parseInt(value);
+      } else if (topic.indexOf(DEVICE_TOPIC) == 0) {
+        espState.device = value;
+      }
 
-      for (let i = 0; i < subscriptions.length; ++i) {
-        const sub = subscriptions[i];
-
-        if (nameValue[0].indexOf(sub.name) == 0) {
-          sub.setValue(nameValue[1]);
+      espState.subscriptions.forEach((subscription) => {
+        if (topic.indexOf(subscription.name) == 0) {
+          subscription.setValue(value);
           control.raiseEvent(MAKERBIT_ID_TOPIC, MAKERBIT_TOPIC_EVT_RECV);
         }
-      }
+      });
     }
 
-    function readSerialMessages(subscriptions: Subscription[]): void {
+    function processMessage(message: string): void {
+      const topicAndValue = splitTopicValue(message);
+      processMqttMessage(topicAndValue[0], topicAndValue[1]);
+    }
+
+    function readSerialMessages(): void {
       let message: string = "";
 
       while (true) {
@@ -143,7 +150,7 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              processMessage(message, subscriptions);
+              processMessage(message);
               basic.pause(0);
               message = "";
             } else {
@@ -271,57 +278,36 @@ namespace makerbit {
     }
 
     function configureSubscriptionsAndPolling(): void {
-      // Notify connnection status
-      control.setInterval(
-        () => {
-          processMessage(
-            CONNECTION_TOPIC + " " + ZoomConnectionStatus.NONE,
-            espState.subscriptions
-          );
-        },
-        1,
-        control.IntervalMode.Timeout
-      );
-
       // poll for device version
-      const deviceInterval = control.setInterval(
+      espState.intervalIdDevice = control.setInterval(
         () => {
-          serialWriteString("device\n");
+          if (espState.device.isEmpty()) {
+            serialWriteString("device\n");
+          } else {
+            control.clearInterval(
+              espState.intervalIdDevice,
+              control.IntervalMode.Interval
+            );
+          }
         },
         300,
         control.IntervalMode.Interval
       );
 
-      // keep device version
-      espState.subscriptions.insertAt(
-        0,
-        new Subscription(DEVICE_TOPIC, (value: string) => {
-          espState.device = value;
-          control.clearInterval(deviceInterval, control.IntervalMode.Interval);
-        })
-      );
-
       // poll for intial connection status
-      const initialConnectionStatusInterval = control.setInterval(
+      espState.intervalIdConnection = control.setInterval(
         () => {
-          serialWriteString("connection-status\n");
-        },
-        850,
-        control.IntervalMode.Interval
-      );
-
-      // keep connection status
-      espState.subscriptions.insertAt(
-        0,
-        new Subscription(CONNECTION_TOPIC, (status: number) => {
-          espState.connectionStatus = status;
-          if (status > ZoomConnectionStatus.NONE) {
+          if (espState.connectionStatus <= ZoomConnectionStatus.NONE) {
+            serialWriteString("connection-status\n");
+          } else {
             control.clearInterval(
-              initialConnectionStatusInterval,
+              espState.intervalIdConnection,
               control.IntervalMode.Interval
             );
           }
-        })
+        },
+        850,
+        control.IntervalMode.Interval
       );
 
       // poll for connection status in regulare intervals
@@ -331,14 +317,6 @@ namespace makerbit {
         },
         62 * 1000,
         control.IntervalMode.Interval
-      );
-
-      // keep last error
-      espState.subscriptions.insertAt(
-        0,
-        new Subscription(ERROR_TOPIC, (value: string) => {
-          espState.lastError = parseInt(value);
-        })
       );
     }
 
@@ -375,20 +353,25 @@ namespace makerbit {
           room: "1",
           connectionStatus: ZoomConnectionStatus.NONE,
           notifiedConnectionStatus: -1,
-          device: "0.0.0",
+          device: "",
           espRX: espRX,
           espTX: espTX,
           ssid: "",
           wiFiPassword: "",
+          intervalIdDevice: 0,
+          intervalIdConnection: 0,
         };
 
         control.runInParallel(() => {
-          readSerialMessages(espState.subscriptions);
+          readSerialMessages();
         });
 
         control.runInParallel(() => {
-          processSubscriptions(espState.subscriptions);
+          notificationLoop(espState.subscriptions);
         });
+
+        // Always notify connection status NONE in the beginning
+        processMessage(CONNECTION_TOPIC + " " + ZoomConnectionStatus.NONE);
 
         configureSubscriptionsAndPolling();
       }
