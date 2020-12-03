@@ -34,6 +34,9 @@ namespace makerbit {
     const DEVICE_TOPIC = "$ESP/device";
     const ERROR_TOPIC = "$ESP/error";
 
+    const MAKERBIT_ID_TOPIC = 23567;
+    const MAKERBIT_TOPIC_EVT_RECV = 2355;
+
     let espState: EspState = undefined;
 
     let serialWriteString = (text: string) => {
@@ -72,17 +75,47 @@ namespace makerbit {
 
     class Subscription {
       name: string;
-      runInBackground: boolean;
       handler: (value: string | number | Image) => void;
+
+      value: string;
 
       constructor(
         name: string,
-        handler: (value: string | number | Image) => void,
-        runInBackground: boolean = true
+        handler: (value: string | number | Image) => void
       ) {
+        this.value = "";
         this.name = normalize(name);
         this.handler = handler;
-        this.runInBackground = runInBackground;
+      }
+
+      setValue(value: string) {
+        this.value = value;
+      }
+
+      notifyNewValue() {
+        if (!this.value.isEmpty()) {
+          let decodedValue: string | number | Image = this.value;
+
+          if (this.name == SCREENSHOT_TOPIC) {
+            decodedValue = decodeImage(parseInt(this.value));
+          }
+
+          this.value = "";
+          this.handler(decodedValue);
+        }
+      }
+    }
+
+    function processSubscriptions(subscriptions: Subscription[]): void {
+      while (true) {
+        control.waitForEvent(MAKERBIT_ID_TOPIC, MAKERBIT_TOPIC_EVT_RECV);
+
+        for (let i = 0; i < subscriptions.length; ++i) {
+          const sub = subscriptions[i];
+          sub.notifyNewValue();
+        }
+
+        basic.pause(1);
       }
     }
 
@@ -96,31 +129,8 @@ namespace makerbit {
         const sub = subscriptions[i];
 
         if (nameValue[0].indexOf(sub.name) == 0) {
-          let value: string | number | Image;
-          if (sub.name == SCREENSHOT_TOPIC) {
-            value = decodeImage(parseInt(nameValue[1]));
-          } else {
-            value = nameValue[1];
-          }
-
-          if (sub.runInBackground) {
-            if (sub.name == CONNECTION_TOPIC) {
-              if (
-                espState.notifiedConnectionStatus != espState.connectionStatus
-              ) {
-                espState.notifiedConnectionStatus = espState.connectionStatus;
-                control.runInParallel(() => {
-                  sub.handler(value);
-                });
-              }
-            } else {
-              control.runInParallel(() => {
-                sub.handler(value);
-              });
-            }
-          } else {
-            sub.handler(value);
-          }
+          sub.setValue(nameValue[1]);
+          control.raiseEvent(MAKERBIT_ID_TOPIC, MAKERBIT_TOPIC_EVT_RECV);
         }
       }
     }
@@ -285,17 +295,10 @@ namespace makerbit {
       // keep device version
       espState.subscriptions.insertAt(
         0,
-        new Subscription(
-          DEVICE_TOPIC,
-          (value: string) => {
-            espState.device = value;
-            control.clearInterval(
-              deviceInterval,
-              control.IntervalMode.Interval
-            );
-          },
-          false
-        )
+        new Subscription(DEVICE_TOPIC, (value: string) => {
+          espState.device = value;
+          control.clearInterval(deviceInterval, control.IntervalMode.Interval);
+        })
       );
 
       // poll for intial connection status
@@ -310,19 +313,15 @@ namespace makerbit {
       // keep connection status
       espState.subscriptions.insertAt(
         0,
-        new Subscription(
-          CONNECTION_TOPIC,
-          (status: number) => {
-            espState.connectionStatus = status;
-            if (status > ZoomConnectionStatus.NONE) {
-              control.clearInterval(
-                initialConnectionStatusInterval,
-                control.IntervalMode.Interval
-              );
-            }
-          },
-          false
-        )
+        new Subscription(CONNECTION_TOPIC, (status: number) => {
+          espState.connectionStatus = status;
+          if (status > ZoomConnectionStatus.NONE) {
+            control.clearInterval(
+              initialConnectionStatusInterval,
+              control.IntervalMode.Interval
+            );
+          }
+        })
       );
 
       // poll for connection status in regulare intervals
@@ -337,13 +336,9 @@ namespace makerbit {
       // keep last error
       espState.subscriptions.insertAt(
         0,
-        new Subscription(
-          ERROR_TOPIC,
-          (value: string) => {
-            espState.lastError = parseInt(value);
-          },
-          false
-        )
+        new Subscription(ERROR_TOPIC, (value: string) => {
+          espState.lastError = parseInt(value);
+        })
       );
     }
 
@@ -389,6 +384,10 @@ namespace makerbit {
 
         control.runInParallel(() => {
           readSerialMessages(espState.subscriptions);
+        });
+
+        control.runInParallel(() => {
+          processSubscriptions(espState.subscriptions);
         });
 
         configureSubscriptionsAndPolling();
