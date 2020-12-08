@@ -21,8 +21,8 @@ namespace makerbit {
       connectionStatus: number;
       notifiedConnectionStatus: number;
       device: string;
-      espRX: SerialPin;
-      espTX: SerialPin;
+      espRX: DigitalPin;
+      espTX: DigitalPin;
       ssid: string;
       wiFiPassword: string;
       intervalIdDevice: number;
@@ -328,17 +328,27 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_connect_esp"
     //% block="zoom connect with ESP RX attached to %espRX | and ESP TX to %espTX"
-    //% espRX.defl=SerialPin.P0
-    //% espTX.defl=SerialPin.P1
+    //% espRX.defl=DigitalPin.P0
+    //% espRX.fieldEditor="gridpicker"
+    //% espRX.fieldOptions.columns=3
+    //% espRX.fieldOptions.tooltips="false"
+    //% espTX.defl=DigitalPin.P1
+    //% espTX.fieldEditor="gridpicker"
+    //% espTX.fieldOptions.columns=3
+    //% espTX.fieldOptions.tooltips="false"
     //% weight=99
-    export function connectESP(espRX: SerialPin, espTX: SerialPin): void {
+    export function connectESP(espRX: DigitalPin, espTX: DigitalPin): void {
       if (control.isSimulator()) {
         serialWriteString = (text: string) => {};
       }
 
       if (!espState || espState.espRX != espRX || espState.espTX != espTX) {
         serial.setRxBufferSize(32);
-        serial.redirect(espRX, espTX, BaudRate.BaudRate9600);
+        serial.redirect(
+          espRX as number,
+          espTX as number,
+          BaudRate.BaudRate9600
+        );
 
         // establish clean connection
         while (serial.read() != -1) {}
@@ -431,7 +441,7 @@ namespace makerbit {
 
     function autoConnectToESP(): void {
       if (!espState) {
-        makerbit.zoom.connectESP(SerialPin.P0, SerialPin.P1);
+        makerbit.zoom.connectESP(DigitalPin.P0, DigitalPin.P1);
       }
     }
 
