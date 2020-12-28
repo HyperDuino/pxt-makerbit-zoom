@@ -170,6 +170,7 @@ namespace makerbit {
     //% block="on zoom received"
     //% draggableParameters=reporter
     //% weight=49
+    //% blockHidden=true
     export function onReceivedString(
       handler: (receivedString: string) => void
     ): void {
@@ -186,6 +187,7 @@ namespace makerbit {
     //% block="on zoom received"
     //% draggableParameters=reporter
     //% weight=50
+    //% blockHidden=true
     export function onReceivedNumber(
       handler: (receivedNumber: number) => void
     ): void {
@@ -493,6 +495,7 @@ namespace makerbit {
     //% block="zoom send string %value"
     //% value.shadowOptions.toString=true
     //% weight=79
+    //% blockHidden=true
     export function sendString(value: string): void {
       autoConnectToESP();
       publish(STRING_TOPIC, value);
@@ -505,6 +508,7 @@ namespace makerbit {
     //% blockId="makerbit_zoom_send_number"
     //% block="zoom send number %value"
     //% weight=80
+    //% blockHidden=true
     export function sendNumber(value: number): void {
       autoConnectToESP();
       publish(NUMBER_TOPIC, "" + Math.roundWithPrecision(value, 2));
@@ -527,7 +531,8 @@ namespace makerbit {
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_number_to_channel"
-    //% block="zoom send|number %value| to channel %channel"
+    //% block="zoom send|number %value || to channel %channel"
+    //% expandableArgumentMode="toggle"
     //% weight=80
     export function sendNumberToChannel(value: number, channel: string): void {
       autoConnectToESP();
@@ -539,7 +544,8 @@ namespace makerbit {
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_string_to_channel"
-    //% block="zoom send|number %value| to channel %channel"
+    //% block="zoom send|string %value || to channel %channel"
+    //% expandableArgumentMode="toggle"
     //% weight=79
     export function sendStringToChannel(value: string, channel: string): void {
       autoConnectToESP();
