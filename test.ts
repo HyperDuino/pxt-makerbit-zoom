@@ -12,11 +12,13 @@ const device: string = makerbit.zoom.getDevice();
 makerbit.zoom.sendNumber(1);
 makerbit.zoom.sendString("hello world");
 makerbit.zoom.sendScreenshot();
-makerbit.zoom.sendNumberToChannel(23, 42);
+makerbit.zoom.sendNumberToChannel(23, "compass");
+makerbit.zoom.sendStringToChannel("Ernie", "name");
 
 makerbit.zoom.onReceivedNumber((value: number) => {});
 makerbit.zoom.onReceivedString((value: string) => {});
 makerbit.zoom.onReceivedScreenshot((screenshot: Image) => {});
-makerbit.zoom.onReceivedNumberInChannel(1, (value: number) => {});
+makerbit.zoom.onReceivedNumberInChannel("compass", (value: number) => {});
+makerbit.zoom.onReceivedStringInChannel("name", (value: string) => {});
 makerbit.zoom.onConnectionStatus(() => {});
 makerbit.zoom.onError(() => {});

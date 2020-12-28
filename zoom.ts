@@ -29,9 +29,9 @@ namespace makerbit {
       intervalIdConnection: number;
     }
 
-    const SCREENSHOT_TOPIC = "_sc";
-    const STRING_TOPIC = "_st";
-    const NUMBER_TOPIC = "_nu";
+    const STRING_TOPIC = "s_";
+    const NUMBER_TOPIC = "n_";
+    const LED_TOPIC = "l_";
     const CONNECTION_TOPIC = "$ESP/connection";
     const DEVICE_TOPIC = "$ESP/device";
     const ERROR_TOPIC = "$ESP/error";
@@ -98,7 +98,7 @@ namespace makerbit {
         if (!this.value.isEmpty()) {
           let decodedValue: string | number | Image = this.value;
 
-          if (this.name == SCREENSHOT_TOPIC) {
+          if (this.name == LED_TOPIC) {
             decodedValue = decodeImage(parseInt(this.value));
           }
 
@@ -206,8 +206,8 @@ namespace makerbit {
       handler: (receivedScreenshot: Image) => void
     ): void {
       autoConnectToESP();
-      espState.subscriptions.push(new Subscription(SCREENSHOT_TOPIC, handler));
-      subscribe(SCREENSHOT_TOPIC);
+      espState.subscriptions.push(new Subscription(LED_TOPIC, handler));
+      subscribe(LED_TOPIC);
     }
 
     /**
@@ -216,15 +216,32 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_on_receive_number_in_channel"
     //% block="on zoom received in channel %channel"
-    //% channel.min=0 channel.max=255 channel.defl=1
     //% draggableParameters=reporter
     //% weight=47
     export function onReceivedNumberInChannel(
-      channel: number,
+      channel: string,
       handler: (receivedNumber: number) => void
     ): void {
       autoConnectToESP();
-      const topic = "" + Math.floor(channel);
+      const topic = NUMBER_TOPIC + normalize(channel)
+      espState.subscriptions.push(new Subscription(topic, handler));
+      subscribe(topic);
+    }
+
+    /**
+     * Do something when the micro:bit receives a string in a channel.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_on_receive_string_in_channel"
+    //% block="on zoom received in channel %channel"
+    //% draggableParameters=reporter
+    //% weight=46
+    export function onReceivedStringInChannel(
+      channel: string,
+      handler: (receivedString: string) => void
+    ): void {
+      autoConnectToESP();
+      const topic = STRING_TOPIC + normalize(channel)
       espState.subscriptions.push(new Subscription(topic, handler));
       subscribe(topic);
     }
@@ -502,7 +519,7 @@ namespace makerbit {
     //% weight=78
     export function sendScreenshot(): void {
       autoConnectToESP();
-      publish(SCREENSHOT_TOPIC, "" + encodeImage(led.screenshot()));
+      publish(LED_TOPIC, "" + encodeImage(led.screenshot()));
     }
 
     /**
@@ -511,12 +528,24 @@ namespace makerbit {
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_send_number_to_channel"
     //% block="zoom send|number %value| to channel %channel"
-    //% channel.min=0 channel.max=255 channel.defl=1
     //% weight=80
-    export function sendNumberToChannel(value: number, channel: number): void {
+    export function sendNumberToChannel(value: number, channel: string): void {
       autoConnectToESP();
-      publish("" + Math.floor(channel), "" + Math.roundWithPrecision(value, 2));
+      publish(NUMBER_TOPIC + normalize(channel), "" + Math.roundWithPrecision(value, 2));
     }
+
+    /**
+     * Broadcasts a string via a channel to other micro:bits that are connected to the same meeting room.
+     */
+    //% subcategory="Zoom"
+    //% blockId="makerbit_zoom_send_string_to_channel"
+    //% block="zoom send|number %value| to channel %channel"
+    //% weight=79
+    export function sendStringToChannel(value: string, channel: string): void {
+      autoConnectToESP();
+      publish(STRING_TOPIC + normalize(channel), value);
+    }
+
 
     /**
      * Sets the meeting and room for internet communications. A micro:bit can be connected to one room at any time.
