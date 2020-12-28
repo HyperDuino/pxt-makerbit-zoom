@@ -19,6 +19,6 @@ makerbit.zoom.onReceivedNumber((value: number) => {});
 makerbit.zoom.onReceivedString((value: string) => {});
 makerbit.zoom.onReceivedScreenshot((screenshot: Image) => {});
 makerbit.zoom.onReceivedNumberInChannel("compass", (value: number) => {});
-makerbit.zoom.onReceivedStringInChannel("name", (value: string) => {});
+makerbit.zoom.onReceivedStringInChannel((value: string) => {}, "name");
 makerbit.zoom.onConnectionStatus(() => {});
 makerbit.zoom.onError(() => {});
