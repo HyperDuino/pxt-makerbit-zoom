@@ -46,6 +46,9 @@ namespace makerbit {
     };
 
     function normalize(value: string): string {
+      if (!value) {
+        return "";
+      }
       return value.replaceAll(" ", "");
     }
 
