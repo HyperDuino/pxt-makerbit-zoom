@@ -27,6 +27,7 @@ namespace makerbit {
       wiFiPassword: string;
       intervalIdDevice: number;
       intervalIdConnection: number;
+      transmissionControl: boolean;
     }
 
     const STRING_TOPIC = "s_";
