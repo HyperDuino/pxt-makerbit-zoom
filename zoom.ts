@@ -35,6 +35,7 @@ namespace makerbit {
     const CONNECTION_TOPIC = "$ESP/connection";
     const DEVICE_TOPIC = "$ESP/device";
     const ERROR_TOPIC = "$ESP/error";
+    const TRANSMISSION_CONTROL_TOPIC = "$ESP/tc";
 
     const MAKERBIT_ID_TOPIC = 23567;
     const MAKERBIT_TOPIC_EVT_RECV = 2355;
@@ -50,17 +51,6 @@ namespace makerbit {
         return "";
       }
       return value.replaceAll(" ", "");
-    }
-
-    function splitTopicValue(message: string): string[] {
-      const splitIdx = message.indexOf(" ");
-      if (splitIdx < 0) {
-        return [message, ""];
-      }
-      let res = [];
-      res.push(message.substr(0, splitIdx));
-      res.push(message.substr(splitIdx + 1, message.length - splitIdx));
-      return res;
     }
 
     function publish(name: string, value: string): void {
@@ -123,13 +113,29 @@ namespace makerbit {
       }
     }
 
-    function processMqttMessage(topic: string, value: string): void {
+    function getFirstToken(data: string): string {
+      const spaceIdx = data.indexOf(" ");
+
+      if (spaceIdx < 0) {
+        return data;
+      }
+      else {
+        return data.substr(0, spaceIdx);
+      }
+    }
+
+    function applyTopicUpdate(topic: string, value: string): void {
       if (topic.indexOf(CONNECTION_TOPIC) == 0) {
-        espState.connectionStatus = parseInt(value);
+        espState.connectionStatus = parseInt(getFirstToken(value));
+
       } else if (topic.indexOf(ERROR_TOPIC) == 0) {
-        espState.lastError = parseInt(value);
+        espState.lastError = parseInt(getFirstToken(value));
+
       } else if (topic.indexOf(DEVICE_TOPIC) == 0) {
-        espState.device = value;
+        espState.device = getFirstToken(value);
+
+      } else if (topic.indexOf(TRANSMISSION_CONTROL_TOPIC) == 0) {
+        espState.transmissionControl = value == "1";
       }
 
       espState.subscriptions.forEach((subscription) => {
@@ -140,9 +146,50 @@ namespace makerbit {
       });
     }
 
-    function processMessage(message: string): void {
-      const topicAndValue = splitTopicValue(message);
-      processMqttMessage(topicAndValue[0], topicAndValue[1]);
+    function splitSerialMessage(message: string, removeTransmissionIdFromContent: boolean): string[] {
+      const contentIdx = message.indexOf(" ");
+      const idIdx = message.indexOf(" ", message.length - 4);
+
+      if (contentIdx < 0) {
+        return [message, "", "0"];
+      }
+
+      const hasId = idIdx > 0 && idIdx > contentIdx;
+
+      const data = [];
+
+      // Add topic
+      data.push(message.substr(0, contentIdx));
+
+      // Add content
+      if (hasId && removeTransmissionIdFromContent) {
+        data.push(message.substr(contentIdx + 1, idIdx - contentIdx - 1));
+      } else {
+        data.push(message.substr(contentIdx + 1, message.length - contentIdx - 1));
+      }
+
+      // Add transmission ID
+      if (hasId) {
+        data.push(message.substr(idIdx + 1, 3))
+      }
+      else {
+        data.push("0");
+      }
+
+      return data;
+    }
+
+
+    function processSerialMessage(message: string): void {
+      const data = splitSerialMessage(message, espState.transmissionControl);
+
+      applyTopicUpdate(data[0], data[1]);
+
+      if (espState.transmissionControl) {
+        serialWriteString("ack ");
+        serialWriteString(data[2]);
+        serialWriteString("\n");
+      }
     }
 
     function readSerialMessages(): void {
@@ -153,7 +200,7 @@ namespace makerbit {
           const r = serial.read();
           if (r != -1) {
             if (r == Delimiters.NewLine) {
-              processMessage(message);
+              processSerialMessage(message);
               basic.pause(0);
               message = "";
             } else {
@@ -384,7 +431,7 @@ namespace makerbit {
     //% blockHidden=true
     export function connectESP(espRX: DigitalPin, espTX: DigitalPin): void {
       if (control.isSimulator()) {
-        serialWriteString = (text: string) => {};
+        serialWriteString = (text: string) => { };
       }
 
       if (!espState || espState.espRX != espRX || espState.espTX != espTX) {
@@ -396,7 +443,7 @@ namespace makerbit {
         );
 
         // establish clean connection
-        while (serial.read() != -1) {}
+        while (serial.read() != -1) { }
         serialWriteString("----- -----\n");
       }
 
@@ -415,6 +462,7 @@ namespace makerbit {
           wiFiPassword: "",
           intervalIdDevice: 0,
           intervalIdConnection: 0,
+          transmissionControl: false,
         };
 
         control.runInParallel(() => {
@@ -426,7 +474,7 @@ namespace makerbit {
         });
 
         // Always notify connection status NONE in the beginning
-        processMessage(CONNECTION_TOPIC + " " + ZoomConnectionStatus.NONE);
+        applyTopicUpdate(CONNECTION_TOPIC, "" + ZoomConnectionStatus.NONE);
 
         configureSubscriptionsAndPolling();
       }
