@@ -394,11 +394,11 @@ namespace makerbit {
      * Connects the ESP8266 device to the 3V Analog Grove socket.
      */
     //% subcategory="Zoom"
-    //% blockId="makerbit_zoom_connect_esp_analog_grove_3v"
+    //% blockId="makerbit_zoom_connect_esp_analog_P1_P2_3v"
     //% block="zoom connect ESP to 3V Analog Grove socket"
     //% weight=99
     export function connectESPtoAnalogGrove3V(): void {
-      connectESP(DigitalPin.P0, DigitalPin.P1);
+      connectESP(DigitalPin.P1, DigitalPin.P2);
     }
 
     /**
