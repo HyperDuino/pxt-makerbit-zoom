@@ -395,7 +395,7 @@ namespace makerbit {
      */
     //% subcategory="Zoom"
     //% blockId="makerbit_zoom_connect_esp_analog_P1_P2_3v"
-    //% block="zoom connect ESP to 3V Analog Grove socket"
+    //% block="zoom connect ESP to P1 P2 Analog Pins"
     //% weight=99
     export function connectESPtoAnalogGrove3V(): void {
       connectESP(DigitalPin.P1, DigitalPin.P2);
